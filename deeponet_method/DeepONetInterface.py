@@ -12,6 +12,9 @@ from scipy.io import wavfile
 from deeponet_acoustics.end2end.train import train
 from deeponet_acoustics.end2end.inference import inference
 
+from simulation_method_interface import SimulationMethod
+from DGinterface import dg_method
+
 
 def _resolve_path(path: str, base_dir: str) -> str:
     """
@@ -59,9 +62,9 @@ def _convert_relative_to_absolute_paths(
     )
 
     # Construct derived paths
-    data["deeponet_inference_setup"]["validation_data_dir"] = os.path.join(
+    data["deeponet_inference_setup"]["test_data_dir"] = os.path.join(
         data["deeponet_train_setup"]["input_dir"],
-        data["deeponet_train_setup"]["testing_data_dir"],
+        data["deeponet_train_setup"]["val_data_dir"],
     )
     data["deeponet_inference_setup"]["model_dir"] = os.path.join(
         data["deeponet_train_setup"]["output_dir"], data["deeponet_train_setup"]["id"]
@@ -74,7 +77,7 @@ def _convert_relative_to_absolute_paths(
     return data
 
 
-def _prepare_dg_json(json_file_path: str) -> str:
+def _prepare_dg_json(json_file_path: str, dirname: str) -> str:
     """
     Create a new JSON file from the configuration file to be used by the DG method.
 
@@ -90,6 +93,9 @@ def _prepare_dg_json(json_file_path: str) -> str:
         data = json.load(file)
 
     # Create a new json file for DG
+    if not os.path.exists(os.path.join(dirname, "tmp")):
+        os.makedirs(os.path.join(dirname, "tmp"))
+
     dg_json = os.path.join(os.path.join(dirname, "tmp"), "dg_tmp.json")
 
     # Copy the data of the DeepONet json into the DG json
@@ -127,9 +133,16 @@ def _run_dg_simulation(json_file_path: str | Path) -> None:
     Args:
         json_file_path: Path to the JSON configuration file
     """
-    gmsh.initialize()
+    should_finalise = False
+    if gmsh.isInitialized():
+        should_finalise = True
+    else:
+        gmsh.initialize()
+
     dg_method(json_file_path, save_results_to_json=False)
-    gmsh.finalize()
+
+    if should_finalise:
+        gmsh.finalize()
 
 
 def _load_and_process_dg_results(
@@ -277,7 +290,7 @@ def _prepare_validation_data(
     # Copy HDF5 validation data
     file_path_val_h5 = os.path.join(
         output_path,
-        settings["deeponet_train_setup"]["testing_data_dir"],
+        settings["deeponet_train_setup"]["val_data_dir"],
         f"src{source_index}",
         os.path.basename(train_h5_path),
     )
@@ -446,6 +459,35 @@ def _write_results_json(
     print(f"Results written to: {output_json_path}")
 
 
+def _convert_from_CHORAS_json(json_file_path: str | Path, dirname: str):
+   
+    default_data_path = _resolve_path("app/models/data/deeponet_default_settings.json", Path(dirname).parent.parent)
+    with open(default_data_path, "r", encoding="utf-8") as default_file:
+        default_data = json.load(default_file)
+        
+    with open(json_file_path, "r", encoding="utf-8") as file:
+        data = json.load(file)
+
+    default_data["absorption_coefficients"] = data["absorption_coefficients"]
+    default_data["msh_path"] = data["msh_path"]
+    default_data["geo_path"] = data["geo_path"]
+
+    default_data["results"][0]["sourceX"] = data["results"][0]["sourceX"]
+    default_data["results"][0]["sourceY"] = data["results"][0]["sourceY"]
+    default_data["results"][0]["sourceZ"] = data["results"][0]["sourceZ"]
+
+    data["simulationSettings"] = {
+        k.replace("don_", "dg_", 1): v
+        for k, v in data["simulationSettings"].items()
+    }
+
+    default_data["dg_setup"]["simulationSettings"] = data["simulationSettings"]
+    default_data["should_cancel"] = False
+
+    with open(json_file_path, "w") as file:
+        json.dump(default_data, file, indent=4)
+
+
 def deeponet_method(json_file_path: str | Path, output_json_path: str | Path = None):
     """
     Execute the complete DeepONet pipeline: DG simulation, data preparation, training, and inference.
@@ -466,6 +508,14 @@ def deeponet_method(json_file_path: str | Path, output_json_path: str | Path = N
     """
     # Step 1: Convert relative paths to absolute paths
     dirname = os.path.dirname(__file__)
+
+    with open(json_file_path, "r", encoding="utf-8") as file:
+        data = json.load(file)
+
+    # This means that the data came from CHORAS
+    if "dg_setup" not in data:
+        _convert_from_CHORAS_json(json_file_path, dirname)
+
     settings = _convert_relative_to_absolute_paths(json_file_path, dirname)
 
     # Set default output path if not provided
@@ -475,7 +525,7 @@ def deeponet_method(json_file_path: str | Path, output_json_path: str | Path = N
         )
 
     # Step 2: Run DG simulation
-    dg_json = _prepare_dg_json(json_file_path)
+    dg_json = _prepare_dg_json(json_file_path, dirname)
     _run_dg_simulation(dg_json)
 
     # Step 3: Load and process DG results
@@ -501,7 +551,7 @@ def deeponet_method(json_file_path: str | Path, output_json_path: str | Path = N
         # Save training data to HDF5
         file_path_train_h5 = os.path.join(
             output_path,
-            settings["deeponet_train_setup"]["training_data_dir"],
+            settings["deeponet_train_setup"]["train_data_dir"],
             f"src{i}",
             f"{output_filename}.h5",
         )
@@ -545,35 +595,26 @@ def deeponet_method(json_file_path: str | Path, output_json_path: str | Path = N
     # Step 7: Write results.json with DeepONet predictions
     _write_results_json(json_file_path, settings, output_json_path)
 
+class DeepONetMethod(SimulationMethod):
+    def __init__(self):
+        super().__init__()
+
+    def run_simulation(self, json_file_path):
+        deeponet_method(json_file_path)
+        
 
 if __name__ == "__main__":
     from HelperFunctions import (
-        find_input_file_in_subfolders,
-        create_tmp_from_input,
-        save_results,
-        plot_dg_results,
+        plot_dg_results
     )
 
-    # Clean up output folder
-    dirname = os.path.dirname(__file__)
-    output_dir = os.path.join(dirname, "headless_backend", "output")
-    if os.path.exists(output_dir):
-        for file in os.listdir(output_dir):
-            file_path = os.path.join(output_dir, file)
-            if os.path.isfile(file_path):
-                os.unlink(file_path)
+    json_file_path = os.environ.get("JSON_PATH", os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "common/exampleInput_deeponet_acoustics.json"))
+    
+    print(f"Running DeepONet method with JSON_PATH={json_file_path}")
 
-    # Load the input file
-    file_name = "exampleInput_deeponet_acoustics.json"
-    json_tmp_file = create_tmp_from_input(file_name)
-
-    # Define output path
-    results_json_path = os.path.join(
-        dirname, "headless_backend", "output", "results.json"
-    )
-
-    # Run the complete DeepONet pipeline (includes DG simulation and results writing)
-    deeponet_method(json_tmp_file, results_json_path)
+    dg_method_object = DeepONetMethod()
+    dg_method_object.run_simulation(json_file_path)
 
     # Plot the results
-    plot_dg_results(results_json_path)
+    plot_dg_results(json_file_path)
+    print("DeepONet container finished.")
