@@ -20,6 +20,16 @@
         "documentationURL":"https://building-acoustics-tu-eindhoven.github.io/acousticDE/index.html"
     },
     {
+        "simulationType": "DON", 
+        "containerImage": "deeponet_image:latest",
+        "envVars": {},
+        "label": "DeepONet",
+        "settings":"don_setting.json",
+        "entryFile":"DeepONetInterface.py",
+        "repositoryURL": "https://github.com/dtu-act/deeponet-acoustic-wave-prop/",
+        "documentationURL": "https://github.com/dtu-act/deeponet-acoustic-wave-prop/"
+    },
+    {
         "simulationType": "MyNewMethod",
         "containerImage": "mynewmethod_image:latest", 
         "envVars": {},
