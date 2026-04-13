@@ -19,6 +19,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the DE method interface and shared components
 COPY deeponet_method/DeepONetInterface.py .
+COPY dg_method/DGinterface.py .
 COPY common/MeasurementRoom.geo .
 COPY common/MeasurementRoom.msh .
 COPY common/HelperFunctions.py .
