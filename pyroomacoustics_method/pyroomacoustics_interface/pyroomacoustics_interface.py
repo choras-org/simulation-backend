@@ -6,6 +6,7 @@ import numpy as np
 import warnings
 import os
 from pathlib import Path
+import pyfar as pf
 
 # Support both package and script execution.
 from .definition import SimulationMethod
@@ -87,7 +88,7 @@ def import_room_geometry(json_file_path):
         import json
         input_data = json.load(f)
 
-    frequencies = input_data['frequencies']
+    frequencies = input_data['results'][0]['frequencies']
     n_bands = len(frequencies)
 
     # initialize gmsh and load the geometry file
@@ -138,11 +139,23 @@ def import_room_geometry(json_file_path):
             element_type, 3, tag=tag)
         faces = np.reshape(face_nodes, (len(face_nodes) // 3, 3))
 
+        absorption_coeffs_config = input_data['absorption_coefficients'][surface_name]
+        if isinstance(absorption_coeffs_config, str):
+            # "0.02, 0.05, 0.12, 0.18, 0.25, 0.38, 0.56"
+            absorption_coeffs = np.array(
+                [float(x.strip()) for x in absorption_coeffs_config.split(",")],
+                dtype=float)
+        elif isinstance(absorption_coeffs_config, list):
+            absorption_coeffs = np.array(
+                absorption_coeffs_config, dtype=float)
+        elif isinstance(absorption_coeffs_config, np.ndarray):
+            absorption_coeffs = absorption_coeffs_config.astype(float)
+
         material = pra.Material(
             energy_absorption={
                 'description': surface_name,
-                'center_freqs': input_data['frequencies'],
-                'coeffs': input_data['absorption_coefficients'][surface_name],
+                'center_freqs': frequencies,
+                'coeffs': absorption_coeffs,
             }
         )
 
@@ -284,8 +297,8 @@ def setup_simulation(json_file_path, walls):
 
     sampling_rate = extended_input_data['simulationSettings'].get('sampling_rate')
     image_source_order = extended_input_data['simulationSettings'].get('image_source_order')
-    ray_tracing = extended_input_data['simulationSettings'].get('ray_tracing')
-    air_absorption = extended_input_data['simulationSettings'].get('air_absorption')
+    ray_tracing = bool(extended_input_data['simulationSettings'].get('ray_tracing'))
+    air_absorption = bool(extended_input_data['simulationSettings'].get('air_absorption'))
 
     room = pra.Room(
         walls,
@@ -294,6 +307,19 @@ def setup_simulation(json_file_path, walls):
         ray_tracing=ray_tracing,
         air_absorption=air_absorption,
     )
+
+    frequencies = input_data["results"][0]["frequencies"]
+
+    room.octave_bands.base_freq = frequencies[0]
+    room.n_octave_bands = len(frequencies)
+
+    alpha, m_pyfar, _  = pf.constants.air_attenuation(
+        20,
+        frequencies,
+        relative_humidity=50/1e2)
+    m = np.squeeze(m_pyfar.freq)
+
+    room.air_absorption = m
 
     # Add sources
     source_pos = get_source_positions(input_data)
@@ -332,6 +358,7 @@ def export_rir_to_input(json_file_path, rir):
 
     # for i in range(num_receivers):
     input_data['results'][0]['responses'][0]['receiverResults'] = rir.tolist()
+    input_data["results"][0]["percentage"] = 100
 
     with open(json_file_path, 'w') as f:
         json.dump(input_data, f, indent=4)
