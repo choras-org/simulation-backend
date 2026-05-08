@@ -28,5 +28,15 @@
         "settings":"my_new_setting.json",
         "repositoryURL":"",
         "documentationURL":""
+    },
+    {
+        "simulationType": "Pyroomacoustics",
+        "containerImage": "pyroomacoustics_image:latest",
+        "envVars": {},
+        "label": "Pyroomacoustics",
+        "settings": "pyroomacoustics_setting.json",
+        "entryFile": "__main__.py",
+        "repositoryURL": "https://github.com/LCAV/pyroomacoustics",
+        "documentationURL": "https://pyroomacoustics.readthedocs.io"
     }
 ]
