@@ -4,7 +4,6 @@ import pyroomacoustics as pra
 import gmsh
 import numpy as np
 import warnings
-import os
 from pathlib import Path
 import pyfar as pf
 
@@ -13,14 +12,40 @@ from .definition import SimulationMethod
 
 
 class PyroomacousticsMethod(SimulationMethod):
-    def __init__(self, input_json_path: str | Path | None = None):
+    """Interface class to run simulations using pyroomacoustics.
+
+    This interface class sets configures the simulation parameters,
+    source and receiver positions, as well as room geometry and boundary data.
+
+    On a successful simulation, the computed RIRs are exported to the input
+    data file.
+
+    Parameters
+    ----------
+    input_json_path : str or Path, optional
+        Path to the simulation configuration file.
+
+    """
+
+    def __init__(self, input_json_path: str | Path | None):
+        """Initialize from configuration file.
+
+        Parameters
+        ----------
+        input_json_path : str | Path | None, optional
+            The input configuration file path. Note that if ``None`` is
+            provided, the simulation will return an error. This input is only
+            allowed to support the case where the environment variable is not
+            set.
+        """
         super().__init__(input_json_path)
 
-    def run_simulation(self):
-        """Run the simulation method for pyroomacoustics based on the JSON file.
+    def run_simulation(self) -> None:
+        """Execute the simulation and export results to the configuration file.
         """
 
         print("pyroomacoustics_method: starting simulation")
+
 
         walls = import_room_geometry(self.input_json_path)
 
@@ -38,12 +63,12 @@ class PyroomacousticsMethod(SimulationMethod):
         print("pyroomacoustics_method: simulation done!")
 
 
-def read_json_input(json_file_path):
-    """Read the input JSON file.
+def read_json_input(json_file_path: str | Path) -> dict:
+    """Read the input JSON file and return the content as a dictionary.
 
     Parameters
     ----------
-    json_file_path : str
+    json_file_path : str | Path
         Path of the input JSON file
 
     Returns
@@ -59,7 +84,7 @@ def read_json_input(json_file_path):
     return input_data
 
 
-def import_room_geometry(json_file_path):
+def import_room_geometry(json_file_path: str | Path) -> list[pra.Wall]:
     """Import room geometry and absorption coefficients.
 
     The geometry is read from a .geo file specified in the JSON input file.
@@ -67,7 +92,7 @@ def import_room_geometry(json_file_path):
 
     Parameters
     ----------
-    json_file_path : str
+    json_file_path : str | Path
         Path to the JSON file containing room geometry and absorption
         coefficients.
 
@@ -89,7 +114,6 @@ def import_room_geometry(json_file_path):
         input_data = json.load(f)
 
     frequencies = input_data['results'][0]['frequencies']
-    n_bands = len(frequencies)
 
     # initialize gmsh and load the geometry file
     gmsh.initialize()
@@ -139,11 +163,14 @@ def import_room_geometry(json_file_path):
             element_type, 3, tag=tag)
         faces = np.reshape(face_nodes, (len(face_nodes) // 3, 3))
 
-        absorption_coeffs_config = input_data['absorption_coefficients'][surface_name]
+        absorption_coeffs_config = input_data[
+            'absorption_coefficients'][surface_name]
         if isinstance(absorption_coeffs_config, str):
-            # "0.02, 0.05, 0.12, 0.18, 0.25, 0.38, 0.56"
             absorption_coeffs = np.array(
-                [float(x.strip()) for x in absorption_coeffs_config.split(",")],
+                [
+                    float(x.strip())
+                    for x in absorption_coeffs_config.split(",")
+                ],
                 dtype=float)
         elif isinstance(absorption_coeffs_config, list):
             absorption_coeffs = np.array(
@@ -174,7 +201,7 @@ def import_room_geometry(json_file_path):
     return walls
 
 
-def get_source_positions(input_data):
+def get_source_positions(input_data: dict) -> np.ndarray:
     """Extract source positions from input data.
 
     Parameters
@@ -194,7 +221,7 @@ def get_source_positions(input_data):
     ])
 
 
-def get_receiver_positions(input_data):
+def get_receiver_positions(input_data: dict) -> np.ndarray:
     """Extract receiver positions from input data.
 
     Parameters
@@ -224,7 +251,7 @@ def get_receiver_positions(input_data):
     return receiver_pos
 
 
-def set_default_simulation_settings(input_data):
+def set_default_simulation_settings(input_data: dict) -> dict:
     """Set default simulation settings if not provided in input data.
 
     Parameters
@@ -273,7 +300,10 @@ def set_default_simulation_settings(input_data):
     return input_data
 
 
-def setup_simulation(json_file_path, walls):
+def setup_simulation(
+        json_file_path: str | Path,
+        walls: list[pra.Wall]
+    ) -> pra.Room:
     """Set up the pyroomacoustics simulation based on the JSON file.
 
     Parameters
@@ -295,10 +325,18 @@ def setup_simulation(json_file_path, walls):
     input_data = read_json_input(json_file_path)
     extended_input_data = set_default_simulation_settings(input_data)
 
-    sampling_rate = extended_input_data['simulationSettings'].get('sampling_rate')
-    image_source_order = extended_input_data['simulationSettings'].get('image_source_order')
-    ray_tracing = bool(extended_input_data['simulationSettings'].get('ray_tracing'))
-    air_absorption = bool(extended_input_data['simulationSettings'].get('air_absorption'))
+    sampling_rate = extended_input_data["simulationSettings"].get(
+        "sampling_rate"
+    )
+    image_source_order = extended_input_data["simulationSettings"].get(
+        "image_source_order"
+    )
+    ray_tracing = bool(
+        extended_input_data["simulationSettings"].get("ray_tracing")
+    )
+    air_absorption = bool(
+        extended_input_data["simulationSettings"].get("air_absorption")
+    )
 
     room = pra.Room(
         walls,
@@ -335,13 +373,16 @@ def setup_simulation(json_file_path, walls):
     return room
 
 
-def export_rir_to_input(json_file_path, rir):
+def export_rir_to_input(
+        json_file_path: str | Path,
+        rir: list[list[np.ndarray]]
+    ) -> None:
     """Export the computed RIRs to the input data structure.
 
     Parameters
     ----------
-    input_data : dict
-        Input data as a dictionary.
+    json_file_path : str | Path
+        Path to the input JSON file.
     rir : list of list of np.ndarray
         Computed RIRs from pyroomacoustics.
 
@@ -354,9 +395,6 @@ def export_rir_to_input(json_file_path, rir):
         import json
         input_data = json.load(f)
 
-    # num_receivers = len(input_data['results'][0]['responses'])
-
-    # for i in range(num_receivers):
     input_data['results'][0]['responses'][0]['receiverResults'] = rir.tolist()
     input_data["results"][0]["percentage"] = 100
 
