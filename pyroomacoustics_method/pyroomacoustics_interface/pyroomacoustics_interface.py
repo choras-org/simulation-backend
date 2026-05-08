@@ -113,10 +113,46 @@ def import_room_geometry(json_file_path: str | Path) -> list[pra.Wall]:
         import json
         input_data = json.load(f)
 
-    frequencies = input_data['results'][0]['frequencies']
 
     # initialize gmsh and load the geometry file
     gmsh.initialize()
+    try:
+        walls = _import_room_geometry(input_data)
+    finally:
+        gmsh.finalize()
+
+    return walls
+
+
+def _import_room_geometry(input_data: dict) -> list[pra.Wall]:
+    """Private import class for geometry and boundary conditions.
+
+    This private function ensures that gmsh is properly finalized after
+    geometry import, even if an error occurs during the import process.
+
+    The public function `import_room_geometry` is responsible for initializing
+    and finalizing gmsh.
+
+    Parameters
+    ----------
+    input_data : dict
+        The input configuration data.
+
+    Returns
+    -------
+    list[pra.Wall]
+        List of walls defining the room geometry and boundary conditions for 
+        all frequency bands.
+
+    Raises
+    ------
+    ValueError
+        If absorption coefficients for any surface are not found in the
+        input JSON file.
+    """
+
+
+    frequencies = input_data['results'][0]['frequencies']
     geometry_file = input_data['geo_path']
     gmsh.open(geometry_file)
 
@@ -194,9 +230,6 @@ def import_room_geometry(json_file_path: str | Path) -> list[pra.Wall]:
             )
             for face in faces
         )
-
-    # finalizing gmsh
-    gmsh.finalize()
 
     return walls
 
