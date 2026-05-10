@@ -169,7 +169,7 @@ if __name__ == "__main__":
     )
     # JSON path in the uploads folder. This variable is set for the 
     # container when it is started up. 
-    json_file_path = os.environ.get("JSON_PATH")
+    json_file_path = os.environ.get("JSON_PATH", os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "common/exampleInput_DE.json"))
     print(f"Running DE method with JSON_PATH={json_file_path}")
     de_method = DEMethod()
     de_method.run_simulation(json_file_path)
@@ -177,4 +177,4 @@ if __name__ == "__main__":
     save_results(json_file_path)
     # Plot the results
     plot_results(json_file_path)
-    print("DG container finished.")
+    print("DE container finished.")

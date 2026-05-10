@@ -89,6 +89,7 @@ def dg_method(json_file_path: str | Path, save_results_to_json: bool = True):
         BC_labels = {}
         RIvals = {}
         i = 0
+
         for ac in absorption_coefficient:
             BC_labels[materialNames[i]] = ac
 
@@ -345,7 +346,7 @@ if __name__ == "__main__":
 
     # JSON path in the uploads folder. This variable is set for the 
     # container when it is started up. 
-    json_file_path = os.environ.get("JSON_PATH")
+    json_file_path = os.environ.get("JSON_PATH", os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "common/exampleInput_DG.json"))
     
     print(f"Running DG method with JSON_PATH={json_file_path}")
     gmsh.initialize()
