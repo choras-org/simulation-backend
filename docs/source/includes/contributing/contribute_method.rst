@@ -129,10 +129,17 @@ Next Steps After Generation
 
 7. **Build Docker image:**
 
+   Either from the directory `simulation-backend` run:
+
    .. code-block:: bash
 
-      docker build -t <method_name_lower>_method . --platform linux/amd64
+      docker build -t <method_name_lower>_method -f <method_name_lower>_method/Dockerfile  . --platform linux/amd64
 
+   Or from the directory of your method run:
+
+   .. code-block:: bash
+
+      docker build -t <method_name_lower>_method -f Dockerfile ../ --platform linux/amd64
 
 Dependencies
 ~~~~~~~~~~~~
