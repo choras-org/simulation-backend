@@ -213,6 +213,11 @@ def _import_room_geometry(input_data: dict) -> list[pra.Wall]:
                 absorption_coeffs_config, dtype=float)
         elif isinstance(absorption_coeffs_config, np.ndarray):
             absorption_coeffs = absorption_coeffs_config.astype(float)
+        else:
+            raise ValueError(
+                "Invalid format for the absorption coefficient. ",
+                f"Got type {type(absorption_coeffs_config)}."
+            )
 
         material = pra.Material(
             energy_absorption={
