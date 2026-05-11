@@ -131,7 +131,7 @@ Next Steps After Generation
 
    .. code-block:: bash
 
-      docker build -t <method_name_lower>_method . --platform linux/amd64
+      docker build -f ./Dockerfile ../ --platform=linux/amd64 -t <method_name_lower>-test:latest
 
 
 Dependencies
