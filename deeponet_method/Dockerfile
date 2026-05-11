@@ -1,4 +1,3 @@
-# Use Python 3.11 as base image to match the main backend
 FROM python:3.11.13-slim
 
 # Set working directory
@@ -11,19 +10,13 @@ RUN apt-get update && apt-get install -y \
     gmsh \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements first for better caching
-COPY deeponet_method/requirements.txt .
+# Copy method package directory
+COPY deeponet_method /app/deeponet_method
 
-# Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+# Install the method package
+RUN pip install --no-cache-dir /app/deeponet_method
 
-# Copy the DE method interface and shared components
-COPY deeponet_method/DeepONetInterface.py .
-COPY common/MeasurementRoom.geo .
-COPY common/MeasurementRoom.msh .
-COPY common/HelperFunctions.py .
-COPY common/simulation_method_interface.py .
+WORKDIR /app/deeponet_method
 
-
-# Default command to run the containerized DE method
-CMD ["python", "DeepONetInterface.py"]
+# Default command to run the containerized deeponet method
+CMD ["python", "-m", "deeponet_interface"]

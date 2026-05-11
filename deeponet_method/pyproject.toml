@@ -1,0 +1,103 @@
+[project]
+name = "deeponet_interface"
+version = "0.1.0"
+description = "Deep Operator Networks (DeepONets) for simulating sound propagation in 3D scenes enabling generating impulse responses in real-time for arbitrary source/receiver pairs. Based on the PNAS paper: 'Sound Propagation in Realistic Interactive 3D Scenes with Parameterized Sources Using Deep Neural Operators' by Borrel-Jensen et al."
+requires-python = ">=3.11"
+authors = [
+    { name = "Nikolas Borrel-Jensen", email = "nikolasborrel@gmail.com" },
+]
+keywords = [
+
+    "acoustic simulation",
+
+    "scientific machine learning",
+
+    "neural operator",
+
+    "real-time",
+
+]
+
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Natural Language :: English",
+    "Programming Language :: Python :: 3",
+
+    "Programming Language :: Python :: 3.11",
+
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+
+    "Programming Language :: Python :: 3.14",
+
+]
+dependencies = [
+
+    "json",
+
+    "os",
+
+    "pathlib",
+
+    "gmsh",
+
+    "numpy",
+
+    "h5py",
+
+    "shutil",
+
+    "re",
+
+    "glob",
+
+    "scipy",
+
+    "requests",
+    "deeponet_acoustics @ git+https://github.com/dtu-act/deeponet-acoustic-wave-prop.git@v0.3",
+
+]
+
+[project.optional-dependencies]
+deploy = [
+    "twine",
+    "wheel",
+    "build",
+    "setuptools",
+    "bump-my-version",
+]
+
+tests = [
+    "pytest",
+    "pytest-cov",
+    "watchdog",
+    "ruff",
+    "coverage",
+]
+
+docs = [
+    "sphinx",
+    "autodocsumm>=0.2.14",
+    "pydata-sphinx-theme",
+    "sphinx_mdinclude",
+    "sphinx-design",
+    "sphinx-favicon",
+    "sphinx-reredirects",
+]
+
+dev = ["deeponet_interface[deploy,tests,docs]"]
+
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["deeponet_interface"]
+
+[project.scripts]
+deeponet_interface = "deeponet_interface:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

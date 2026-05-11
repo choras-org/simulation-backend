@@ -5,12 +5,12 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "simulation_backend"
 version = "0.1.0"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 description = "Simulation backend"
 
 dependencies = [
     "gmsh",
-    "matplotlib",
+    "matplotlib",    
 ]
 
 [project.optional-dependencies]
