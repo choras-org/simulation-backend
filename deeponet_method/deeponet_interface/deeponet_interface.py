@@ -73,8 +73,12 @@ class DeepONetMethod(SimulationMethod):
             train_cfg["output_dir"], train_cfg["id"]
         )
 
+        _write_progress_json(json_file_path, output_json_path, 0)
+
         dg_json_path = _write_dg_json(dg_cfg, dirname)
         _run_dg_simulation(dg_json_path)
+
+        _write_progress_json(json_file_path, output_json_path, 50)
 
         output_path = dg_cfg["output_path"]
         output_filename = dg_cfg["output_filename"]
@@ -129,10 +133,14 @@ class DeepONetMethod(SimulationMethod):
                 simulation_params_path_train_json,
             )
 
+        monitoring = _monitoring_info(train_cfg)
+        _print_tensorboard_instructions(monitoring, when="before")
+
         train(train_cfg)
         inference(train_cfg, inf_cfg)
 
-        _write_results_json(json_file_path, train_cfg, output_json_path)
+        _print_tensorboard_instructions(monitoring, when="after")
+        _write_results_json(json_file_path, train_cfg, output_json_path, monitoring)
 
         print("deeponet simulation completed successfully!")
 
@@ -142,6 +150,35 @@ def _resolve_path(path: str, base_dir: str) -> str:
     if os.path.isabs(path):
         return path
     return os.path.join(base_dir, path)
+
+
+def _monitoring_info(train_cfg: dict) -> dict:
+    return {
+        "tensorboardLogdir": train_cfg["output_dir"],
+        "tensorboardCommand": "uv run tensorboard --logdir deeponet_interface/tmp/deeponet/results",
+        "tensorboardUrl": "http://localhost:6006",
+        "scalars": ["Loss/train/loss", "Loss/val/loss", "Loss/learning_rate"],
+    }
+
+
+def _print_tensorboard_instructions(monitoring: dict, when: str) -> None:
+    banner = "=" * 70
+    if when == "before":
+        header = "TensorBoard — inspect training live"
+        body = (
+            f"In another terminal, run:\n"
+            f"  {monitoring['tensorboardCommand']}\n"
+            f"Then open {monitoring['tensorboardUrl']} "
+            f"(scalars: {', '.join(monitoring['scalars'])})."
+        )
+    else:
+        header = "TensorBoard — final logs"
+        body = (
+            f"Training complete. Inspect at any time:\n"
+            f"  {monitoring['tensorboardCommand']}\n"
+            f"Open {monitoring['tensorboardUrl']}."
+        )
+    print(f"\n{banner}\n{header}\n{banner}\n{body}\n{banner}\n")
 
 
 def _write_dg_json(dg_cfg: dict, dirname: str) -> str:
@@ -320,10 +357,37 @@ def _read_wav_impulse_response(wav_path: str) -> list[float]:
     return data.tolist()
 
 
+def _write_progress_json(
+    source_json_path: str | Path,
+    output_json_path: str | Path,
+    percentage: int,
+) -> None:
+    """Set ``results[*].percentage`` and write to ``output_json_path``."""
+    # Prefer the already-written output if present so we don't clobber prior writes.
+    read_path = (
+        output_json_path
+        if os.path.exists(output_json_path)
+        else source_json_path
+    )
+    with open(read_path, "r", encoding="utf-8") as file:
+        data = json.load(file)
+
+    for result in data.get("results", []):
+        result["percentage"] = percentage
+
+    output_dir = os.path.dirname(output_json_path)
+    if output_dir:
+        os.makedirs(output_dir, exist_ok=True)
+
+    with open(output_json_path, "w", encoding="utf-8") as file:
+        json.dump(data, file, indent=4)
+
+
 def _write_results_json(
     source_json_path: str | Path,
     train_cfg: dict,
     output_json_path: str | Path,
+    monitoring: dict | None = None,
 ) -> None:
     """Copy ``source_json_path``, replace ``results`` with parsed ``*_pred.wav`` IRs, write to ``output_json_path``."""
     receivers_dir = os.path.join(
@@ -375,6 +439,8 @@ def _write_results_json(
             continue
 
     data["results"] = list(results_by_source.values())
+    if monitoring is not None:
+        data["monitoring"] = monitoring
 
     output_dir = os.path.dirname(output_json_path)
     if output_dir:

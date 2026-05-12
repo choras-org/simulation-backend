@@ -111,7 +111,7 @@
             "type": "string",
             "display": "radio",
             "options": {
-                "Modulated MLP": "mod-mlp",
+                "Modified MLP": "mod-mlp",
                 "MLP": "mlp"
             },
             "default": "mod-mlp"
@@ -154,7 +154,7 @@
             "type": "string",
             "display": "radio",
             "options": {
-                "Modulated MLP": "mod-mlp",
+                "Modified MLP": "mod-mlp",
                 "MLP": "mlp"
             },
             "default": "mod-mlp"

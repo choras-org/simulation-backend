@@ -43,17 +43,22 @@ dependencies = [
     "dg_interface",
 ]
 
+[tool.uv]
+# Override acousticDE's numpy<2.0 pin; deeponet_acoustics needs numpy>=2.0 via jax.
+# We only use acousticDE's generate_mesh, which is numpy-free.
+override-dependencies = ["numpy>=2.0"]
+# Ensure the lockfile has Linux x86_64 wheels for the Docker target.
+required-environments = ["sys_platform == 'linux' and platform_machine == 'x86_64'"]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+
 [tool.uv.sources]
 dg_interface = { path = "../dg_method", editable = true }
-
-[tool.uv]
-# acousticDE (transitive via dg_interface) pins numpy<2.0, but deeponet_acoustics
-# needs numpy>=2.0 via jax. The only acousticDE entry point we use is
-# generate_mesh, which has no numpy dependency. Override the pin so both stacks
-# coexist. Module-level imports in sibling FVM files still succeed under
-# numpy 2.x; runtime breakage would only surface if dg_method started calling
-# those siblings.
-override-dependencies = ["numpy>=2.0"]
+# JAX handles GPU compute; torch is only imported for DataLoader/SummaryWriter
+# on code paths we never execute. Use CPU-only torch everywhere to save ~2 GB.
+torch = { index = "pytorch-cpu" }
 
 [project.optional-dependencies]
 deploy = [
@@ -82,7 +87,10 @@ docs = [
     "sphinx-reredirects",
 ]
 
-dev = ["deeponet_interface[deploy,tests,docs]"]
+dev = [
+    "deeponet_interface[deploy,tests,docs]",
+    "setuptools>=65,<80",  # pkg_resources for tensorboard's startup
+]
 
 [build-system]
 requires = ["setuptools>=61.0", "wheel"]

@@ -149,6 +149,7 @@ def test_build_inference_config_hardcoded_flags(default_input_data):
 
 def test_build_inference_config_recv_positions_dedupe():
     user_input = {
+        "simulationSettings": {"ir_length": 0.05},
         "results": [
             {
                 "sourceX": 1, "sourceY": 2, "sourceZ": 3,
@@ -185,5 +186,5 @@ def test_build_inference_config_recv_positions_from_default_input(default_input_
 
 
 def test_build_inference_config_empty_results():
-    cfg = build_inference_config({"results": []})
+    cfg = build_inference_config({"simulationSettings": {"ir_length": 0.05}, "results": []})
     assert cfg["recv_positions"] == []
