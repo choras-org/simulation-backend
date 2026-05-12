@@ -261,9 +261,27 @@ Extracting Source/Receiver Positions
 Writing Results
 ~~~~~~~~~~~~~~~
 
+For impulse responses, the sampling rate is fixed to 44.1kHz:
+
 .. code-block:: python
 
    result_container["results"][0]["responses"][0]["receiverResults"] = results.tolist()
 
    with open(json_file_path, "w") as json_output:
        json_output.write(json.dumps(result_container, indent=4))
+
+
+for ETC results assuming the etc of shape (n_receiver, n_fbands, n_times) and
+and the times being the time vector of shape (n_times):
+
+.. code-block:: python
+   for i_rec in range(n_receivers):
+      for i_frequency in range(n_bands):
+            result_container["results"][0]["responses"][i_rec]["receiverResults"].append(
+               {
+                  "data": 10*np.log10(etc[i_rec, i_frequency]/1e-12).tolist(),
+                  "t": times.tolist(),
+                  "frequency": frequencies[i_frequency],
+                  "type": "edc",
+               }
+            )
