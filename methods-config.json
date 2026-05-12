@@ -21,12 +21,22 @@
     },
     {
         "simulationType": "MyNewMethod",
-        "containerImage": "mynewmethod_image:latest", 
+        "containerImage": "mynewmethod_image:latest",
         "envVars": {},
         "label": "My New Method",
         "entryFile":"MyNewMethodInterface.py",
         "settings":"my_new_setting.json",
         "repositoryURL":"",
         "documentationURL":""
+    },
+    {
+        "simulationType": "PFFDTD",
+        "containerImage": "pffdtd_image:latest",
+        "envVars": {},
+        "label": "PFFDTD (Hamilton wave-equation FDTD)",
+        "settings": "pffdtd_setting.json",
+        "entryFile": "PFFDTDinterface.py",
+        "repositoryURL": "https://github.com/bsxfun/pffdtd",
+        "documentationURL": "https://github.com/bsxfun/pffdtd"
     }
 ]
