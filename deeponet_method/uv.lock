@@ -717,8 +717,8 @@ wheels = [
 
 [[package]]
 name = "deeponet-acoustics"
-version = "1.1.0"
-source = { git = "https://github.com/dtu-act/deeponet-acoustic-wave-prop.git?rev=v0.3#3da1ae7bce73d558b005ef20b19a92cdce675e10" }
+version = "0.3.0"
+source = { git = "https://github.com/dtu-act/deeponet-acoustic-wave-prop.git?rev=v0.3.1#3c4833d6b752849012178b731318632ea57aa376" }
 dependencies = [
     { name = "flax" },
     { name = "graphviz" },
@@ -806,7 +806,7 @@ requires-dist = [
     { name = "build", marker = "extra == 'deploy'" },
     { name = "bump-my-version", marker = "extra == 'deploy'" },
     { name = "coverage", marker = "extra == 'tests'" },
-    { name = "deeponet-acoustics", git = "https://github.com/dtu-act/deeponet-acoustic-wave-prop.git?rev=v0.3" },
+    { name = "deeponet-acoustics", git = "https://github.com/dtu-act/deeponet-acoustic-wave-prop.git?rev=v0.3.1" },
     { name = "deeponet-interface", extras = ["deploy", "tests", "docs"], marker = "extra == 'dev'" },
     { name = "dg-interface", editable = "../dg_method" },
     { name = "gmsh" },

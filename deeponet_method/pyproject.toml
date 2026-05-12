@@ -39,7 +39,7 @@ dependencies = [
     "h5py",
     "scipy",
     "requests",
-    "deeponet_acoustics @ git+https://github.com/dtu-act/deeponet-acoustic-wave-prop.git@v0.3",
+    "deeponet_acoustics @ git+https://github.com/dtu-act/deeponet-acoustic-wave-prop.git@v0.3.1",
     "dg_interface",
 ]
 

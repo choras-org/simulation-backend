@@ -5,6 +5,7 @@ import os
 import re
 import shutil
 from pathlib import Path
+from typing import Callable
 
 import gmsh
 import h5py
@@ -16,6 +17,9 @@ from deeponet_acoustics.end2end.train import train
 
 from ._config import build_dg_config, build_inference_config, build_train_config
 from .definition import SimulationMethod
+
+
+DG_PROGRESS_END = 50
 
 
 class DeepONetMethod(SimulationMethod):
@@ -73,12 +77,23 @@ class DeepONetMethod(SimulationMethod):
             train_cfg["output_dir"], train_cfg["id"]
         )
 
-        _write_progress_json(json_file_path, output_json_path, 0)
+        last_written = -1
+
+        def write_progress(pct: int) -> None:
+            nonlocal last_written
+            pct = max(0, min(100, pct))
+            if pct > last_written:
+                _write_progress_json(json_file_path, output_json_path, pct)
+                last_written = pct
+
+        write_progress(0)
+
+        dg_progress_callback = lambda dg_pct: write_progress(round(dg_pct * DG_PROGRESS_END / 100))
 
         dg_json_path = _write_dg_json(dg_cfg, dirname)
-        _run_dg_simulation(dg_json_path)
+        _run_dg_simulation(dg_json_path, progress_callback=dg_progress_callback)
 
-        _write_progress_json(json_file_path, output_json_path, 50)
+        write_progress(DG_PROGRESS_END)
 
         output_path = dg_cfg["output_path"]
         output_filename = dg_cfg["output_filename"]
@@ -136,7 +151,10 @@ class DeepONetMethod(SimulationMethod):
         monitoring = _monitoring_info(train_cfg)
         _print_tensorboard_instructions(monitoring, when="before")
 
-        train(train_cfg)
+        def train_progress_callback(train_pct: float) -> None:
+            write_progress(DG_PROGRESS_END + round(train_pct * (100 - DG_PROGRESS_END) / 100))
+
+        train(train_cfg, progress_callback=train_progress_callback)
         inference(train_cfg, inf_cfg)
 
         _print_tensorboard_instructions(monitoring, when="after")
@@ -191,7 +209,10 @@ def _write_dg_json(dg_cfg: dict, dirname: str) -> str:
     return dg_json_path
 
 
-def _run_dg_simulation(json_file_path: str | Path) -> None:
+def _run_dg_simulation(
+    json_file_path: str | Path,
+    progress_callback: Callable[[float], None] | None = None,
+) -> None:
     """Run the DG simulation, generating NPZ output without touching the user JSON."""
     # Lazy import keeps _config unit tests fast (skips dg/jax/torch import chain).
     from dg_interface.DGinterface import dg_method
@@ -200,7 +221,12 @@ def _run_dg_simulation(json_file_path: str | Path) -> None:
         gmsh.initialize()
 
     try:
-        dg_method(json_file_path, write_to_json=False, write_to_npz=True)
+        dg_method(
+            json_file_path,
+            write_to_json=False,
+            write_to_npz=True,
+            progress_callback=progress_callback,
+        )
     finally:
         gmsh.finalize()
 
@@ -363,7 +389,6 @@ def _write_progress_json(
     percentage: int,
 ) -> None:
     """Set ``results[*].percentage`` and write to ``output_json_path``."""
-    # Prefer the already-written output if present so we don't clobber prior writes.
     read_path = (
         output_json_path
         if os.path.exists(output_json_path)

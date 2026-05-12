@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+from typing import Callable
 import numpy
 import gmsh
 
@@ -38,7 +39,12 @@ class DGMethod(SimulationMethod):
 
 
 # ugly to keep this public, but needed for deepomethod...
-def dg_method(json_file_path: str | Path, write_to_json: bool = True, write_to_npz: bool = False) -> None:
+def dg_method(
+    json_file_path: str | Path,
+    write_to_json: bool = True,
+    write_to_npz: bool = False,
+    progress_callback: Callable[[float], None] | None = None,
+) -> None:
         """
         Run DG simulation for acoustic wave propagation.
 
@@ -48,6 +54,7 @@ def dg_method(json_file_path: str | Path, write_to_json: bool = True, write_to_n
                            If False, only creates the json file. Default is True for standalone use.
             write_to_npz: If True, writes the results to an NPZ file for use with e.g. deep learning frameworks.
                           Default is False.
+            progress_callback: Called with a float in [0, 100].
         """
         with open(json_file_path, "r") as json_file:
             result_container = json.load(json_file)
@@ -208,6 +215,24 @@ def dg_method(json_file_path: str | Path, write_to_json: bool = True, write_to_n
 
         tsi_time_integrator = edg_acoustics.TSI_TI(sim.RHS_operator, sim.dtscale, CFL, Nt=3)
         sim.init_TimeIntegrator(tsi_time_integrator)
+
+        # TODO: replace this monkey-patch by adding `progress_callback` to
+        # `AcousticsSimulation.time_integration` upstream in edg-acoustics.
+        if progress_callback is not None:
+            n_steps = max(1, int(impulse_length / tsi_time_integrator.dt))
+            steps_per_percent = max(1, n_steps // 100)
+            original_step_dt = tsi_time_integrator.step_dt
+            step_counter = {"i": 0}
+
+            def step_dt_with_progress(*args, **kwargs):
+                original_step_dt(*args, **kwargs)
+                step_counter["i"] += 1
+                if step_counter["i"] % steps_per_percent == 0 or step_counter["i"] == n_steps:
+                    progress_callback(min(100.0, 100.0 * step_counter["i"] / n_steps))
+
+            tsi_time_integrator.step_dt = step_dt_with_progress
+            progress_callback(0.0)
+
         sim.time_integration(
             total_time=impulse_length,
             delta_step=save_every_Nstep,
