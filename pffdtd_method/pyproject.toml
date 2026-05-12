@@ -1,0 +1,62 @@
+[project]
+name = "pffdtd_interface"
+version = "0.1.0"
+description = "CHORAS interface for PFFDTD (Brian Hamilton): wave-equation FDTD on Cartesian grids with frequency-dependent impedance boundaries."
+requires-python = ">=3.11"
+authors = [
+    { name = "Burhanuddin Sakarwala" }
+]
+keywords = [
+    "FDTD",
+    "wave-equation",
+    "pffdtd",
+    "acoustic simulation",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Natural Language :: English",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+]
+
+# Runtime deps. PFFDTD itself is NOT pip-installable -- its python/ subtree
+# has no setup.py / pyproject.toml; it's added to PYTHONPATH by the Dockerfile.
+# All the listed deps are PFFDTD's transitive Python imports (numpy/scipy/h5py
+# for I/O + math, gmsh for mesh prep, numba for the CPU FDTD JIT, plus
+# tqdm/psutil/memory_profiler which the voxelizer imports at module load).
+#
+# numpy is pinned <2 because the upstream PFFDTD repo (aa319f6) uses
+# np.bool8 and other numpy 1.x aliases that 2.0 removed.
+dependencies = [
+    "numpy>=1.23.0,<2",
+    "scipy>=1.10.0",
+    "h5py>=3.7.0",
+    "gmsh==4.13.1",
+    "numba>=0.59.0",
+    "matplotlib",
+    "resampy",
+    "requests",
+    "tqdm",
+    "psutil",
+    "memory_profiler",
+    "plotly",
+    "polyscope",
+    "trimesh",
+    "soundfile",
+]
+
+[project.optional-dependencies]
+deploy = ["twine", "wheel", "build", "setuptools"]
+tests  = ["pytest", "pytest-cov"]
+
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["pffdtd_interface"]
+
+[project.scripts]
+pffdtd_interface = "pffdtd_interface:main"
