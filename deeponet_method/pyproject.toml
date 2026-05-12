@@ -34,31 +34,26 @@ classifiers = [
 
 ]
 dependencies = [
-
-    "json",
-
-    "os",
-
-    "pathlib",
-
     "gmsh",
-
     "numpy",
-
     "h5py",
-
-    "shutil",
-
-    "re",
-
-    "glob",
-
     "scipy",
-
     "requests",
     "deeponet_acoustics @ git+https://github.com/dtu-act/deeponet-acoustic-wave-prop.git@v0.3",
-
+    "dg_interface",
 ]
+
+[tool.uv.sources]
+dg_interface = { path = "../dg_method", editable = true }
+
+[tool.uv]
+# acousticDE (transitive via dg_interface) pins numpy<2.0, but deeponet_acoustics
+# needs numpy>=2.0 via jax. The only acousticDE entry point we use is
+# generate_mesh, which has no numpy dependency. Override the pin so both stacks
+# coexist. Module-level imports in sibling FVM files still succeed under
+# numpy 2.x; runtime breakage would only surface if dg_method started calling
+# those siblings.
+override-dependencies = ["numpy>=2.0"]
 
 [project.optional-dependencies]
 deploy = [

@@ -1,0 +1,205 @@
+{
+    "type": "simulationSettings",
+    "options": [
+        {
+            "name": "Freq. upper limit",
+            "id": "fmax",
+            "type": "integer",
+            "display": "text",
+            "min": 20,
+            "max": 4000,
+            "default": 200,
+            "step": 1,
+            "endAdornment": "Hz"
+        },
+        {
+            "name": "Speed of sound",
+            "id": "c0",
+            "type": "float",
+            "display": "text",
+            "min": 100,
+            "max": 500,
+            "default": 343,
+            "step": 1,
+            "endAdornment": "m/s"
+        },
+        {
+            "name": "Impulse response length",
+            "id": "ir_length",
+            "type": "float",
+            "display": "text",
+            "min": 0.01,
+            "max": 1.0,
+            "default": 0.05,
+            "step": 0.01,
+            "endAdornment": "seconds"
+        },
+        {
+            "name": "Training iterations",
+            "id": "iterations",
+            "type": "integer",
+            "display": "text",
+            "min": 100,
+            "max": 1000000,
+            "default": 1000,
+            "step": 1
+        },
+        {
+            "name": "Learning rate",
+            "id": "learning_rate",
+            "type": "float",
+            "display": "text",
+            "min": 1e-6,
+            "max": 1.0,
+            "default": 0.001,
+            "step": 0.0001
+        },
+        {
+            "name": "LR decay steps",
+            "id": "decay_steps",
+            "type": "integer",
+            "display": "text",
+            "min": 1,
+            "max": 1000000,
+            "default": 2000,
+            "step": 1
+        },
+        {
+            "name": "LR decay rate",
+            "id": "decay_rate",
+            "type": "float",
+            "display": "text",
+            "min": 0.0,
+            "max": 1.0,
+            "default": 0.9,
+            "step": 0.01
+        },
+        {
+            "name": "Optimizer",
+            "id": "optimizer",
+            "type": "string",
+            "display": "radio",
+            "options": {
+                "Adam": "adam",
+                "SGD": "sgd"
+            },
+            "default": "adam"
+        },
+        {
+            "name": "Branch batch size",
+            "id": "batch_size_branch",
+            "type": "integer",
+            "display": "text",
+            "min": 1,
+            "max": 1024,
+            "default": 64,
+            "step": 1
+        },
+        {
+            "name": "Coordinate batch size",
+            "id": "batch_size_coord",
+            "type": "integer",
+            "display": "text",
+            "min": 1,
+            "max": 100000,
+            "default": 1000,
+            "step": 1
+        },
+        {
+            "name": "Branch net architecture",
+            "id": "bn_architecture",
+            "type": "string",
+            "display": "radio",
+            "options": {
+                "Modulated MLP": "mod-mlp",
+                "MLP": "mlp"
+            },
+            "default": "mod-mlp"
+        },
+        {
+            "name": "Branch net activation",
+            "id": "bn_activation",
+            "type": "string",
+            "display": "radio",
+            "options": {
+                "Sine": "sin",
+                "ReLU": "relu",
+                "Tanh": "tanh"
+            },
+            "default": "sin"
+        },
+        {
+            "name": "Branch net hidden layers",
+            "id": "bn_num_hidden_layers",
+            "type": "integer",
+            "display": "text",
+            "min": 1,
+            "max": 20,
+            "default": 3,
+            "step": 1
+        },
+        {
+            "name": "Branch net hidden neurons",
+            "id": "bn_num_hidden_neurons",
+            "type": "integer",
+            "display": "text",
+            "min": 8,
+            "max": 4096,
+            "default": 512,
+            "step": 1
+        },
+        {
+            "name": "Trunk net architecture",
+            "id": "tn_architecture",
+            "type": "string",
+            "display": "radio",
+            "options": {
+                "Modulated MLP": "mod-mlp",
+                "MLP": "mlp"
+            },
+            "default": "mod-mlp"
+        },
+        {
+            "name": "Trunk net activation",
+            "id": "tn_activation",
+            "type": "string",
+            "display": "radio",
+            "options": {
+                "Sine": "sin",
+                "ReLU": "relu",
+                "Tanh": "tanh"
+            },
+            "default": "sin"
+        },
+        {
+            "name": "Trunk net hidden layers",
+            "id": "tn_num_hidden_layers",
+            "type": "integer",
+            "display": "text",
+            "min": 1,
+            "max": 20,
+            "default": 3,
+            "step": 1
+        },
+        {
+            "name": "Trunk net hidden neurons",
+            "id": "tn_num_hidden_neurons",
+            "type": "integer",
+            "display": "text",
+            "min": 8,
+            "max": 4096,
+            "default": 512,
+            "step": 1
+        },
+        {
+            "name": "Output neurons",
+            "id": "num_output_neurons",
+            "type": "integer",
+            "display": "text",
+            "min": 1,
+            "max": 4096,
+            "default": 100,
+            "step": 1
+        }
+    ]
+}

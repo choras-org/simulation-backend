@@ -7,7 +7,7 @@ from pathlib import Path
 
 
 DG_RHO0 = 1.213
-DG_PPW = 2
+DG_PPW = 3
 DG_CFL = 1
 DG_OUTPUT_PATH = "tmp/deeponet/"
 DG_OUTPUT_FILENAME = "dg_sim_results"
@@ -17,11 +17,10 @@ TRAIN_INPUT_DIR = "tmp/deeponet/"
 TRAIN_OUTPUT_DIR = "tmp/deeponet/results/"
 TRAIN_DATA_DIR = "train_data"
 VAL_DATA_DIR = "val_data"
-TRAIN_TMAX = 1000
 TRAIN_NORMALIZE_DATA = True
 TRAIN_USE_ADAPTIVE_WEIGHTS = True
+TRAIN_F0_FEAT = [1.458, 0.729, 0.486]
 
-INFERENCE_TMAX = 1000
 INFERENCE_WRITE_FULL_WAVE_FIELD = False
 INFERENCE_SNAP_TO_GRID = True
 INFERENCE_WRITE_IR_PLOTS = True
@@ -76,10 +75,10 @@ def build_train_config(user_input: dict, msh_path: str | Path) -> dict:
         "id": stem,
         "input_dir": TRAIN_INPUT_DIR,
         "output_dir": TRAIN_OUTPUT_DIR,
-        "training_data_dir": TRAIN_DATA_DIR,
-        "testing_data_dir": VAL_DATA_DIR,
-        "tmax": TRAIN_TMAX,
-        "f0_feat": list(sim["f0_feat"]),
+        "train_data_dir": TRAIN_DATA_DIR,
+        "val_data_dir": VAL_DATA_DIR,
+        "tmax": sim["ir_length"],
+        "f0_feat": list(TRAIN_F0_FEAT),
         "normalize_data": TRAIN_NORMALIZE_DATA,
         "iterations": sim["iterations"],
         "use_adaptive_weights": TRAIN_USE_ADAPTIVE_WEIGHTS,
@@ -102,7 +101,7 @@ def build_inference_config(user_input: dict) -> dict:
     ``(x, y, z)`` triples drawn from every ``results[].responses[]``.
     """
     return {
-        "tmax": INFERENCE_TMAX,
+        "tmax": user_input["simulationSettings"]["ir_length"],
         "write_full_wave_field": INFERENCE_WRITE_FULL_WAVE_FIELD,
         "snap_to_grid": INFERENCE_SNAP_TO_GRID,
         "write_ir_plots": INFERENCE_WRITE_IR_PLOTS,

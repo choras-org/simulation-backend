@@ -38,14 +38,16 @@ class DGMethod(SimulationMethod):
 
 
 # ugly to keep this public, but needed for deepomethod...
-def dg_method(json_file_path: str | Path, save_results_to_json: bool = True):
+def dg_method(json_file_path: str | Path, write_to_json: bool = True, write_to_npz: bool = False) -> None:
         """
         Run DG simulation for acoustic wave propagation.
 
         Args:
             json_file_path: Path to the JSON configuration file
-            save_results_to_json: If True, saves impulse responses back to the JSON file.
-                                If False, only creates the json file. Default is True for standalone use.
+            write_to_json: If True, saves impulse responses back to the JSON file.
+                           If False, only creates the json file. Default is True for standalone use.
+            write_to_npz: If True, writes the results to an NPZ file for use with e.g. deep learning frameworks.
+                          Default is False.
         """
         with open(json_file_path, "r") as json_file:
             result_container = json.load(json_file)
@@ -55,12 +57,7 @@ def dg_method(json_file_path: str | Path, save_results_to_json: bool = True):
         # --------------------
         simulation_settings = result_container["simulationSettings"]
 
-        # TODO: should make a better solution for this that calls the dg_method function as if there was no deeponet
-        called_from_deeponet = False
-        if result_container["results"][0]["resultType"] == "DON":
-            called_from_deeponet = True
-
-        if called_from_deeponet:
+        if write_to_npz:
             output_path = result_container["output_path"]
             output_results = result_container["output_filename"]
             file_format = result_container["file_format"]
@@ -197,7 +194,7 @@ def dg_method(json_file_path: str | Path, save_results_to_json: bool = True):
             rec, "brute_force"
         )  # brute_force or scipy(default) approach to locate the receiver points in the mesh
 
-        if called_from_deeponet:
+        if write_to_npz:
             # write initial conditition
             if file_format == "npz":
                 ic_mesh = np.array([sim.xyz[0].flatten(), sim.xyz[0].flatten(), sim.xyz[0].flatten()])
@@ -224,7 +221,7 @@ def dg_method(json_file_path: str | Path, save_results_to_json: bool = True):
         results.apply_correction()
 
         # Only save results back to JSON if in standalone mode
-        if save_results_to_json:
+        if write_to_json:
             try:
                 with open(json_file_path, "r", encoding="utf-8") as file:
                     data = json.load(file)
@@ -247,7 +244,7 @@ def dg_method(json_file_path: str | Path, save_results_to_json: bool = True):
             ) as pressure_result_csv:
                 df.to_csv(pressure_result_csv, index=False)
 
-        if called_from_deeponet:
+        if write_to_npz:
             results.write_results(os.path.join(output_path, output_results), file_format, append=True)
         print("Finished!")
 

@@ -10,7 +10,7 @@ def test_user_facing_required_top_level_keys(default_input_data):
 
 def test_user_facing_simulation_settings(default_input_data):
     sim = default_input_data["simulationSettings"]
-    for key in ("fmax", "c0", "ir_length", "f0_feat", "iterations",
+    for key in ("fmax", "c0", "ir_length", "iterations",
                 "decay_steps", "decay_rate", "learning_rate", "optimizer",
                 "batch_size_branch", "batch_size_coord",
                 "bn_architecture", "bn_activation",
@@ -19,6 +19,11 @@ def test_user_facing_simulation_settings(default_input_data):
                 "tn_num_hidden_layers", "tn_num_hidden_neurons",
                 "num_output_neurons"):
         assert key in sim, f"missing simulationSettings.{key}"
+
+
+def test_user_facing_no_array_fields(default_input_data):
+    """The settings schema doesn't support arrays — they must be hardcoded in code."""
+    assert "f0_feat" not in default_input_data["simulationSettings"]
 
 
 def test_user_facing_results_shape(default_input_data):

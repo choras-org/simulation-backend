@@ -19,20 +19,12 @@ from .definition import SimulationMethod
 
 
 class DeepONetMethod(SimulationMethod):
-    """Interface class to run the deeponet method.
-
-    The class implements method to run the calculations for the
-    deeponet simulation method. All required configuration parameters
-    are expected to be provided in the input JSON file passed during
-    initialization.
-    """
+    """CHORAS interface for the deeponet method; config comes from the input JSON."""
 
     def __init__(self, input_json_path: str | Path | None = None):
-        """Initialize the deeponet method interface for the given JSON file."""
         super().__init__(input_json_path)
 
     def run_simulation(self) -> None:
-        """Run the simulation."""
         self._deeponet_method(self.input_json_path)
 
     def _deeponet_method(
@@ -40,29 +32,26 @@ class DeepONetMethod(SimulationMethod):
         json_file_path: str | Path,
         output_json_path: str | Path | None = None,
     ) -> None:
-        """Run the full deeponet pipeline.
-
-        Pipeline steps:
-        1. Load user-facing JSON (read-only) and build the three internal configs
-        2. Resolve relative paths against the module directory
-        3. Run DG simulation to generate high-fidelity training data
-        4. Convert DG NPZ output to HDF5 train/validation splits per source
-        5. Train DeepONet
-        6. Run DeepONet inference
-        7. Write results.json with the predicted impulse responses
-        """
+        """Pipeline: load JSON → build configs → DG → HDF5 → train → infer → write results."""
         dirname = os.path.dirname(__file__)
+        json_dir = os.path.dirname(os.path.abspath(str(json_file_path)))
 
         if output_json_path is None:
-            output_json_path = os.path.join(
-                dirname, "headless_backend", "output", "results.json"
-            )
+            if os.environ.get("HEADLESS", "").lower() == "true":
+                # Headless: leave input JSON untouched, write to a side file.
+                output_json_path = os.path.join(
+                    dirname, "headless_backend", "output", "results.json"
+                )
+            else:
+                # CHORAS: overwrite input so save_results() POSTs the merged payload.
+                output_json_path = str(json_file_path)
 
         with open(json_file_path, "r", encoding="utf-8") as file:
             user_input = json.load(file)
 
-        msh_path = Path(_resolve_path(user_input["msh_path"], dirname))
-        geo_path = Path(_resolve_path(user_input["geo_path"], dirname))
+        # Geometry paths resolve against the JSON's dir; output paths against the module dir.
+        msh_path = Path(_resolve_path(user_input["msh_path"], json_dir))
+        geo_path = Path(_resolve_path(user_input["geo_path"], json_dir))
         resolved_input = {
             **user_input,
             "msh_path": str(msh_path),
@@ -78,7 +67,7 @@ class DeepONetMethod(SimulationMethod):
         train_cfg["output_dir"] = _resolve_path(train_cfg["output_dir"], dirname)
 
         inf_cfg["test_data_dir"] = os.path.join(
-            train_cfg["input_dir"], train_cfg["testing_data_dir"]
+            train_cfg["input_dir"], train_cfg["val_data_dir"]
         )
         inf_cfg["model_dir"] = os.path.join(
             train_cfg["output_dir"], train_cfg["id"]
@@ -104,7 +93,7 @@ class DeepONetMethod(SimulationMethod):
 
             file_path_train_h5 = os.path.join(
                 output_path,
-                train_cfg["training_data_dir"],
+                train_cfg["train_data_dir"],
                 f"src{i}",
                 f"{output_filename}.h5",
             )
@@ -121,7 +110,7 @@ class DeepONetMethod(SimulationMethod):
 
             simulation_params_path_train_json = os.path.join(
                 output_path,
-                train_cfg["training_data_dir"],
+                train_cfg["train_data_dir"],
                 f"src{i}",
                 "simulation_parameters.json",
             )
@@ -143,7 +132,7 @@ class DeepONetMethod(SimulationMethod):
         train(train_cfg)
         inference(train_cfg, inf_cfg)
 
-        _write_results_json(train_cfg, output_json_path)
+        _write_results_json(json_file_path, train_cfg, output_json_path)
 
         print("deeponet simulation completed successfully!")
 
@@ -167,15 +156,14 @@ def _write_dg_json(dg_cfg: dict, dirname: str) -> str:
 
 def _run_dg_simulation(json_file_path: str | Path) -> None:
     """Run the DG simulation, generating NPZ output without touching the user JSON."""
-    # Lazy import: dg_method is a sibling method package, not a venv dep.
-    # Importing it eagerly would couple unrelated unit tests to the DG install.
-    from dg_method.dg_interface.DGinterface import dg_method
+    # Lazy import keeps _config unit tests fast (skips dg/jax/torch import chain).
+    from dg_interface.DGinterface import dg_method
 
     if not gmsh.isInitialized():
         gmsh.initialize()
 
     try:
-        dg_method(json_file_path, save_results_to_json=False)
+        dg_method(json_file_path, write_to_json=False, write_to_npz=True)
     finally:
         gmsh.finalize()
 
@@ -191,6 +179,13 @@ def _load_and_process_dg_results(
     time_steps = np.linspace(0, results_dg["total_time"], results_dg["Ntimesteps"])
     source_positions = np.array([results_dg["source_xyz"]]).astype(np.float64)
 
+    if not np.isfinite(pressures).all():
+        raise RuntimeError(
+            "DG produced non-finite pressures (Inf/NaN) after float16 cast. "
+            "The DG simulation is unstable or its output exceeds float16 range — "
+            "check CFL, polynomial order, mesh resolution, or pin a known-good edg_acoustics SHA."
+        )
+
     return mesh, pressures, time_steps, source_positions, results_dg
 
 
@@ -199,13 +194,10 @@ def _process_source_data(results_dg: dict, source_position: np.ndarray) -> tuple
     umesh = np.array(results_dg["IC_mesh"]).T.astype(np.float64)
     upressures = np.array(results_dg["IC_pressure"]).astype(np.float16)
 
-    # TODO: the umesh generated by DGFEM should be uniformly distributed.
-    # For now we should be using MLPs not requiring uniform grids.
-    # Should be the number of points/elements in the x, y, z dimensions used if e.g.
-    # CNNs are used in the branch net
+    # TODO: DGFEM umesh isn't uniform yet; sentinel shape is fine while branch net is MLP, but a CNN branch would need real (nx, ny, nz).
     ushape = np.array([-1, -1, -1]).astype(np.int64)
 
-    # TODO: dg should be fixed to only returning unique mesh points
+    # TODO: dg should return unique mesh points
     print(f"# coordinates from DG: {umesh.shape[0]}")
     umesh, unique_indices = np.unique(umesh, axis=0, return_index=True)
     upressures = upressures[unique_indices]
@@ -273,7 +265,7 @@ def _prepare_validation_data(
     """Prepare validation data by copying training data into the val tree."""
     file_path_val_h5 = os.path.join(
         output_path,
-        train_cfg["testing_data_dir"],
+        train_cfg["val_data_dir"],
         f"src{source_index}",
         os.path.basename(train_h5_path),
     )
@@ -282,14 +274,14 @@ def _prepare_validation_data(
     shutil.copy(train_h5_path, file_path_val_h5)
 
     simulation_params_path_root_json = os.path.join(
-        output_path, train_cfg["training_data_dir"], "simulation_parameters.json"
+        output_path, train_cfg["train_data_dir"], "simulation_parameters.json"
     )
     Path(simulation_params_path_root_json).unlink(missing_ok=True)
     shutil.copy(train_params_path, simulation_params_path_root_json)
 
     simulation_params_path_val_json = os.path.join(
         output_path,
-        train_cfg["testing_data_dir"],
+        train_cfg["val_data_dir"],
         f"src{source_index}",
         "simulation_parameters.json",
     )
@@ -300,10 +292,7 @@ def _prepare_validation_data(
 def _parse_receiver_position_from_filename(
     filename: str,
 ) -> tuple[list[float], list[float]]:
-    """Parse source and receiver positions from a prediction WAV filename.
-
-    Expected format: ``0_x0=['0.40', '1.00', '1.20']_r0=['1.00', '1.00', '1.10']_pred.wav``
-    """
+    """Parse src/recv positions from ``0_x0=['x','y','z']_r0=['x','y','z']_pred.wav``."""
     x0_match = re.search(r"x0=\['([^']+)',\s*'([^']+)',\s*'([^']+)'\]", filename)
     r0_match = re.search(r"r0=\['([^']+)',\s*'([^']+)',\s*'([^']+)'\]", filename)
 
@@ -332,13 +321,11 @@ def _read_wav_impulse_response(wav_path: str) -> list[float]:
 
 
 def _write_results_json(
-    train_cfg: dict, output_json_path: str | Path
+    source_json_path: str | Path,
+    train_cfg: dict,
+    output_json_path: str | Path,
 ) -> None:
-    """Write ``results.json`` with the predicted impulse responses.
-
-    Reads the ``*_pred.wav`` files produced by DeepONet inference and
-    populates a ``results`` list grouped by source position.
-    """
+    """Copy ``source_json_path``, replace ``results`` with parsed ``*_pred.wav`` IRs, write to ``output_json_path``."""
     receivers_dir = os.path.join(
         train_cfg["output_dir"], train_cfg["id"], "figs", "receivers"
     )
@@ -348,6 +335,9 @@ def _write_results_json(
     if not pred_wav_files:
         print(f"Warning: No prediction WAV files found in {receivers_dir}")
         return
+
+    with open(source_json_path, "r", encoding="utf-8") as file:
+        data = json.load(file)
 
     results_by_source: dict[tuple[float, ...], dict] = {}
 
@@ -384,12 +374,13 @@ def _write_results_json(
             print(f"Warning: Could not process {filename}: {e}")
             continue
 
-    output_data = {"results": list(results_by_source.values())}
+    data["results"] = list(results_by_source.values())
 
-    os.makedirs(os.path.dirname(output_json_path), exist_ok=True)
-    Path(output_json_path).unlink(missing_ok=True)
+    output_dir = os.path.dirname(output_json_path)
+    if output_dir:
+        os.makedirs(output_dir, exist_ok=True)
 
     with open(output_json_path, "w", encoding="utf-8") as file:
-        json.dump(output_data, file, indent=4)
+        json.dump(data, file, indent=4)
 
     print(f"Results written to: {output_json_path}")

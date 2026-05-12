@@ -11,11 +11,10 @@ from deeponet_interface._config import (
     DG_PPW,
     DG_RHO0,
     INFERENCE_RECV_GROUPS,
-    INFERENCE_TMAX,
     TRAIN_DATA_DIR,
+    TRAIN_F0_FEAT,
     TRAIN_INPUT_DIR,
     TRAIN_OUTPUT_DIR,
-    TRAIN_TMAX,
     VAL_DATA_DIR,
     build_dg_config,
     build_inference_config,
@@ -78,9 +77,8 @@ def test_build_train_config_hardcoded_defaults(default_input_data):
     cfg = build_train_config(default_input_data, Path("x.msh"))
     assert cfg["input_dir"] == TRAIN_INPUT_DIR
     assert cfg["output_dir"] == TRAIN_OUTPUT_DIR
-    assert cfg["training_data_dir"] == TRAIN_DATA_DIR
-    assert cfg["testing_data_dir"] == VAL_DATA_DIR
-    assert cfg["tmax"] == TRAIN_TMAX
+    assert cfg["train_data_dir"] == TRAIN_DATA_DIR
+    assert cfg["val_data_dir"] == VAL_DATA_DIR
     assert cfg["normalize_data"] is True
     assert cfg["use_adaptive_weights"] is True
 
@@ -88,7 +86,6 @@ def test_build_train_config_hardcoded_defaults(default_input_data):
 @pytest.mark.parametrize(
     "key",
     [
-        "f0_feat",
         "iterations",
         "decay_steps",
         "decay_rate",
@@ -102,6 +99,13 @@ def test_build_train_config_hardcoded_defaults(default_input_data):
 def test_build_train_config_passes_user_field_through(default_input_data, key):
     cfg = build_train_config(default_input_data, Path("x.msh"))
     assert cfg[key] == default_input_data["simulationSettings"][key]
+
+
+def test_build_train_config_f0_feat_is_hardcoded(default_input_data):
+    cfg = build_train_config(default_input_data, Path("x.msh"))
+    assert cfg["f0_feat"] == TRAIN_F0_FEAT
+    # Should be a fresh list so callers can mutate without poisoning the constant
+    assert cfg["f0_feat"] is not TRAIN_F0_FEAT
 
 
 def test_build_train_config_branch_net_nesting(default_input_data):
@@ -135,7 +139,6 @@ def test_build_train_config_no_flat_bn_or_tn_keys(default_input_data):
 
 def test_build_inference_config_hardcoded_flags(default_input_data):
     cfg = build_inference_config(default_input_data)
-    assert cfg["tmax"] == INFERENCE_TMAX
     assert cfg["write_full_wave_field"] is False
     assert cfg["snap_to_grid"] is True
     assert cfg["write_ir_plots"] is True
@@ -172,10 +175,13 @@ def test_build_inference_config_recv_positions_dedupe():
     ]
 
 
-def test_build_inference_config_single_receiver(default_input_data):
+def test_build_inference_config_recv_positions_from_default_input(default_input_data):
     cfg = build_inference_config(default_input_data)
-    response = default_input_data["results"][0]["responses"][0]
-    assert cfg["recv_positions"] == [[response["x"], response["y"], response["z"]]]
+    expected = [
+        [r["x"], r["y"], r["z"]]
+        for r in default_input_data["results"][0]["responses"]
+    ]
+    assert cfg["recv_positions"] == expected
 
 
 def test_build_inference_config_empty_results():

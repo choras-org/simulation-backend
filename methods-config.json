@@ -28,5 +28,15 @@
         "entryFile": "__main__.py",
         "repositoryURL": "https://github.com/LCAV/pyroomacoustics",
         "documentationURL": "https://pyroomacoustics.readthedocs.io"
+    },
+    {
+        "simulationType": "DeepONet",
+        "containerImage": "deeponet_image:latest",
+        "envVars": {"CUDA_VISIBLE_DEVICES": "0"},
+        "label": "DeepONet",
+        "settings": "deeponet_setting.json",
+        "entryFile": "deeponet_interface.py",
+        "repositoryURL": "https://github.com/dtu-act/deeponet-acoustic-wave-prop/",
+        "documentationURL": "https://github.com/dtu-act/deeponet-acoustic-wave-prop/blob/main/README.md"
     }
 ]
