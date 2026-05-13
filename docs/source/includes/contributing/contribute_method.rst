@@ -271,7 +271,7 @@ For impulse responses, the sampling rate is fixed to 44.1kHz:
        json_output.write(json.dumps(result_container, indent=4))
 
 
-for ETC results assuming the etc of shape (n_receiver, n_fbands, n_times) and
+for energy time curves - assuming the etc of shape (n_receiver, n_fbands, n_times) - and
 and the times being the time vector of shape (n_times):
 
 .. code-block:: python
