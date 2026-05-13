@@ -261,7 +261,9 @@ Extracting Source/Receiver Positions
 Writing Results
 ~~~~~~~~~~~~~~~
 
-For impulse responses, the sampling rate is fixed to 44.1kHz:
+For impulse responses, the sampling rate is defined by the frontend and can be
+assessed by ``input_data["simulationSettings"]["sampling_rate"]``. The impulse
+response is provided as follows:
 
 .. code-block:: python
 
@@ -271,17 +273,16 @@ For impulse responses, the sampling rate is fixed to 44.1kHz:
        json_output.write(json.dumps(result_container, indent=4))
 
 
-for energy time curves - assuming the etc of shape (n_receiver, n_fbands, n_times) - and
-and the times being the time vector of shape (n_times):
+for energy time curves - The results are appended for each frequency band.
+Here is an example for the ``energy_decay_curve`` for the 125 Hz frequency band
+and its ``times_vector``:
 
 .. code-block:: python
-   for i_rec in range(n_receivers):
-      for i_frequency in range(n_bands):
-            result_container["results"][0]["responses"][i_rec]["receiverResults"].append(
-               {
-                  "data": 10*np.log10(etc[i_rec, i_frequency]/1e-12).tolist(),
-                  "t": times.tolist(),
-                  "frequency": frequencies[i_frequency],
-                  "type": "edc",
-               }
-            )
+   result_container["results"][0]["responses"][i_rec]["receiverResults"].append(
+      {
+         "data": energy_decay_curve.tolist(),
+         "t": times_vector.tolist(),
+         "frequency": 125,
+         "type": "edc",
+      }
+   )
