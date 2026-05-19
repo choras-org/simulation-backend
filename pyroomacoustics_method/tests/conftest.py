@@ -4,6 +4,7 @@ import tempfile
 from pathlib import Path
 import json
 from unittest.mock import patch, MagicMock
+import pyfar as pf
 
 import pytest
 
@@ -65,3 +66,9 @@ def mock_requests_post():
         mock_response.status_code = 200
         mock_post.return_value = mock_response
         yield mock_post
+
+
+@pytest.fixture
+def example_rir() -> pf.Signal:
+    """Fixture to provide an example RIR for testing."""
+    return pf.signals.files.room_impulse_response()
