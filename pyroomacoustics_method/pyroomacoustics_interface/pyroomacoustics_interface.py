@@ -43,6 +43,19 @@ class PyroomacousticsMethod(SimulationMethod):
         """
         super().__init__(input_json_path)
 
+    def _write_progress(self, progress: int) -> None:
+        config = self._read_config()
+        config["results"][0]["percentage"] = progress
+        self._write_config(config)
+
+    def _read_config(self) -> dict:
+        return read_json_input(self.input_json_path)
+
+    def _write_config(self, config: dict) -> None:
+        with open(self.input_json_path, 'w') as f:
+            import json
+            json.dump(config, f, indent=4)
+
     def run_simulation(self) -> None:
         """Execute the simulation and export results to the configuration file.
         """
@@ -51,17 +64,38 @@ class PyroomacousticsMethod(SimulationMethod):
 
 
         walls = import_room_geometry(self.input_json_path)
+        self._write_progress(20)
 
         simulation_setup = setup_simulation(self.input_json_path, walls)
+        self._write_progress(30)
 
         # Compute the RIRs
         simulation_setup.compute_rir()
+        self._write_progress(80)
 
         # Get the RIRs for the first source and first microphone
         rir = simulation_setup.rir[0][0]
 
         # Export the RIRs to the input data structure
         export_rir_to_input(self.input_json_path, rir)
+        self._write_progress(90)
+
+        export_rir_to_csv(self.input_json_path)
+        self._write_progress(95)
+
+        self._read_config()['simulationSettings']['sampling_rate']
+
+        bands = self._read_config()['results'][0]['frequencies']
+        rap = calculate_room_acoustic_parameters(
+            pf.Signal(rir, simulation_setup.fs),
+            bands=bands,
+        )
+
+        config = export_room_acoustic_parameters_to_json(
+            self._read_config(), rap)
+        self._write_config(config)
+
+        self._write_progress(100)
 
         print("pyroomacoustics_method: simulation done!")
 
@@ -112,10 +146,7 @@ def import_room_geometry(json_file_path: str | Path) -> list[pra.Wall]:
         input JSON file.
     """
 
-    with open(json_file_path, 'r') as f:
-        import json
-        input_data = json.load(f)
-
+    input_data = read_json_input(json_file_path)
 
     # initialize gmsh and load the geometry file
     gmsh.initialize()
@@ -442,7 +473,6 @@ def export_rir_to_input(
         input_data = json.load(f)
 
     input_data['results'][0]['responses'][0]['receiverResults'] = rir.tolist()
-    input_data["results"][0]["percentage"] = 100
 
     with open(json_file_path, 'w') as f:
         json.dump(input_data, f, indent=4)
