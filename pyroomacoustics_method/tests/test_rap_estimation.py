@@ -1,8 +1,9 @@
 import json
 
+from pyroomacoustics_interface import PyroomacousticsMethod
+
 from pyroomacoustics_interface.pyroomacoustics_interface import (
     calculate_room_acoustic_parameters,
-    export_room_acoustic_parameters_to_json,
 )
 
 
@@ -36,14 +37,11 @@ def test_export_parameters_to_dict(create_temporary_input_file):
 
     input_file = create_temporary_input_file
 
-    # Load the parameters
+    PyroomacousticsMethod(input_file)._export_room_acoustic_parameters_to_json(
+        parameters)
+
     with open(input_file, 'r') as f:
-        input_parameters = json.load(f)
-
-    output_file = export_room_acoustic_parameters_to_json(
-        input_parameters, parameters)
-
-    print(output_file['results'][0]['responses'][0]['parameters'])
+        output_file = json.load(f)
 
     param_names = list(parameters.keys())
     print(param_names)

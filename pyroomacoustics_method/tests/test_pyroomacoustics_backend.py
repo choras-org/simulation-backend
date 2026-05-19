@@ -7,25 +7,21 @@ import numpy as np
 import numpy.testing as npt
 
 from pyroomacoustics_interface import PyroomacousticsMethod
-from pyroomacoustics_interface.pyroomacoustics_interface import (
-    export_rir_to_csv,
-    export_rir_to_input,
-    get_receiver_positions,
-    get_source_positions,
-)
 
 
-def test_get_receiver(default_input_data):
+def test_get_receiver(create_temporary_input_file):
     """Test the get_receiver function."""
-    receiver = get_receiver_positions(default_input_data)
+    interface = PyroomacousticsMethod(create_temporary_input_file)
+    receiver = interface.get_receiver_positions()
 
     assert receiver is not None
     npt.assert_array_equal(receiver, np.array([[1.0, 1.0, 1.5]]))
 
 
-def test_get_source_positions(default_input_data):
+def test_get_source_positions(create_temporary_input_file):
     """Test the get_source_positions function."""
-    sources = get_source_positions(default_input_data)
+    interface = PyroomacousticsMethod(create_temporary_input_file)
+    sources = interface.get_source_positions()
 
     assert sources is not None
     npt.assert_array_equal(sources, np.array([2.0, 2.0, 1.5]))
@@ -34,7 +30,8 @@ def test_get_source_positions(default_input_data):
 def test_export_rir_to_input(create_temporary_input_file):
     """Test the export_rir_to_input function."""
     rir = np.array([0.0, 0.1, 0.2, 0.3, 0.4, 0.5], dtype=float)
-    export_rir_to_input(create_temporary_input_file, rir)
+
+    PyroomacousticsMethod(create_temporary_input_file)._export_rir_to_input(rir)
 
     with open(create_temporary_input_file, 'r') as f:
         data = json.load(f)
@@ -47,12 +44,14 @@ def test_export_pressure_csv(create_temporary_input_file):
 
     input_file = create_temporary_input_file
     rir = np.array([0.0, 0.1, 0.2, 0.3, 0.4, 0.5], dtype=float)
-    export_rir_to_input(input_file, rir)
+
+    interface = PyroomacousticsMethod(input_file)
+    interface._export_rir_to_input(rir)
 
     with open(input_file, 'r') as f:
         config = json.load(f)
 
-    export_rir_to_csv(input_file)
+    interface.export_rir_to_csv()
 
     output_file = str(input_file).replace('.json', '_pressure.csv')
     assert os.path.exists(output_file)
