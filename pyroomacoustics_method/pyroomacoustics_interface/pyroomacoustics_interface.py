@@ -175,7 +175,7 @@ def _import_room_geometry(input_data: dict) -> list[pra.Wall]:
     Returns
     -------
     list[pra.Wall]
-        List of walls defining the room geometry and boundary conditions for 
+        List of walls defining the room geometry and boundary conditions for
         all frequency bands.
 
     Raises
