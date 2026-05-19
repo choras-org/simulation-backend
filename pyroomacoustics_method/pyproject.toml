@@ -31,6 +31,8 @@ dependencies = [
     "pyroomacoustics>=0.8.0",
     "requests",
     "pyfar>=0.8.0",
+    "pyrato>=1.0.0",
+    "pandas",
 ]
 
 [project.optional-dependencies]
