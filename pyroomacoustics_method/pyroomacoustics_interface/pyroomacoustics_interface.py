@@ -224,6 +224,11 @@ def _import_room_geometry(input_data: dict) -> list[pra.Wall]:
                 'description': surface_name,
                 'center_freqs': frequencies,
                 'coeffs': absorption_coeffs,
+            },
+            scattering={
+                'description': surface_name,
+                'center_freqs': frequencies,
+                'coeffs': np.ones_like(absorption_coeffs)*0.1,
             }
         )
 
