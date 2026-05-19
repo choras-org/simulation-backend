@@ -1,6 +1,3 @@
-from venv import create
-import pytest
-import numpy as np
 import json
 
 from pyroomacoustics_interface.pyroomacoustics_interface import (
@@ -26,8 +23,6 @@ def test_rap_estimation(example_rir):
 
 def test_export_parameters_to_dict(create_temporary_input_file):
     """Test exporting the estimated parameters to a JSON file."""
-
-    bands = [125, 250, 500, 1000, 2000, 4000]
 
     parameters = {
         't20': [0.5, 0.4, 0.3, 0.2, 0.1, 0.05],
