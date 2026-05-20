@@ -439,14 +439,9 @@ class PyroomacousticsMethod(SimulationMethod):
 
         Parameters
         ----------
-        json_file_path : str | Path
-            Path to the input JSON file.
         rir : np.ndarray
             Computed RIRs from pyroomacoustics.
 
-        Returns
-        -------
-        None
         """
 
         input_data = self.configuration
@@ -469,11 +464,6 @@ class PyroomacousticsMethod(SimulationMethod):
             'C50', 'D50'), and the values are lists containing the
             parameter values for each frequency band.
 
-        Returns
-        -------
-        updated_config : dict
-            The updated input configuration dictionary with the room acoustic
-            parameters added to the results section.
         """
 
         input_data = self.configuration
