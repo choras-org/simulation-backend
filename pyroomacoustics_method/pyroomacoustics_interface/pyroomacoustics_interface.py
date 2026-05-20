@@ -1,5 +1,6 @@
 """Module implementing a CHORAS interface for pyroomacoustics.
 """
+import json
 import warnings
 from pathlib import Path
 
@@ -72,14 +73,12 @@ class PyroomacousticsMethod(SimulationMethod):
 
     def _read_config(self) -> dict:
         with open(self.input_json_path, 'r') as f:
-            import json
             input_data = json.load(f)
 
         return input_data
 
     def _write_config(self, config: dict) -> None:
         with open(self.input_json_path, 'w') as f:
-            import json
             json.dump(config, f, indent=4)
 
     def run_simulation(self) -> None:
