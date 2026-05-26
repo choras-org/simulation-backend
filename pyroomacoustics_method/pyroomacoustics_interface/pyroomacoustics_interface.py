@@ -3,6 +3,7 @@
 import json
 import warnings
 from pathlib import Path
+from typing import Any
 
 import gmsh
 import numpy as np
@@ -66,10 +67,129 @@ class PyroomacousticsMethod(SimulationMethod):
         """
         self._write_config(config)
 
+    def _get_result_data(self, result_idx: int = 0) -> dict:
+        """Get the first result section from configuration.
+
+        Returns
+        -------
+        dict
+            The first result dictionary from the configuration.
+        """
+        return self.configuration['results'][result_idx]
+
+    def _get_response_data(
+            self,
+            response_idx: int = 0,
+            result_idx: int = 0,
+        ) -> dict:
+        """Get a specific response section from the first result.
+
+        Parameters
+        ----------
+        response_idx : int, optional
+            The index of the response to retrieve, by default 0.
+        result_idx : int, optional
+            The index of the result to retrieve the response from,
+            by default 0.
+
+        Returns
+        -------
+        dict
+            The response dictionary at the specified index.
+        """
+        return self._get_result_data(
+            result_idx=result_idx)['responses'][response_idx]
+
+    def _get_response_parameters(
+            self,
+            response_idx: int = 0,
+            result_idx: int = 0,
+        ) -> dict:
+        """Get the parameters section of a specific response.
+
+        Parameters
+        ----------
+        response_idx : int, optional
+            The index of the response, by default 0.
+        result_idx : int, optional
+            The index of the result to retrieve the response from,
+            by default 0.
+
+        Returns
+        -------
+        dict
+            The parameters dictionary for the specified response.
+        """
+        return self._get_response_data(
+            response_idx, result_idx)['parameters']
+
+    def _get_simulation_settings(self) -> dict:
+        """Get the simulation settings from configuration.
+
+        Returns
+        -------
+        dict
+            The simulation settings dictionary.
+        """
+        return self.configuration.get('simulationSettings', {})
+
+    def _update_response_data(
+            self,
+            response_idx: int,
+            key: str,
+            value: Any
+        ) -> None:
+        """Update a specific field in a response and write to config.
+
+        Parameters
+        ----------
+        response_idx : int
+            The index of the response to update.
+        key : str
+            The key to update in the response.
+        value : any
+            The value to set.
+        """
+        config = self.configuration
+        config['results'][0]['responses'][response_idx][key] = value
+        self.configuration = config
+
+    def _update_response_parameters(
+            self,
+            response_idx: int,
+            parameters: dict
+        ) -> None:
+        """Update multiple parameters in a response and write to config.
+
+        Parameters
+        ----------
+        response_idx : int
+            The index of the response to update.
+        parameters : dict
+            Dictionary of parameter key-value pairs to update.
+        """
+        config = self.configuration
+        response_params = config['results'][0]['responses'][response_idx]['parameters']
+        for key, value in parameters.items():
+            response_params[key] = value
+        self.configuration = config
+
+    def _update_result_data(self, key: str, value: Any) -> None:
+        """Update a field in the result data and write to config.
+
+        Parameters
+        ----------
+        key : str
+            The key to update in the result data.
+        value : any
+            The value to set.
+        """
+        config = self.configuration
+        config['results'][0][key] = value
+        self.configuration = config
+
     def _write_progress(self, progress: int) -> None:
-        config = self._read_config()
-        config["results"][0]["percentage"] = progress
-        self._write_config(config)
+        self._update_result_data('percentage', progress)
 
     def _read_config(self) -> dict:
         with open(self.input_json_path, 'r') as f:
@@ -108,7 +228,7 @@ class PyroomacousticsMethod(SimulationMethod):
         self.export_rir_to_csv()
         self._write_progress(95)
 
-        bands = self.configuration['results'][0]['frequencies']
+        bands = self._get_result_data()['frequencies']
 
         rap = calculate_room_acoustic_parameters(
             pf.Signal(rir, simulation_setup.fs),
@@ -177,7 +297,7 @@ class PyroomacousticsMethod(SimulationMethod):
         """
         input_data = self.configuration
 
-        frequencies = input_data['results'][0]['frequencies']
+        frequencies = self._get_result_data()['frequencies']
         geometry_file = input_data['geo_path']
         gmsh.open(geometry_file)
 
@@ -277,11 +397,11 @@ class PyroomacousticsMethod(SimulationMethod):
         source_positions : np.ndarray
             Array of source positions with shape (3,).
         """
-        input_data = self.configuration
+        result_data = self._get_result_data()
         return np.array([
-            input_data['results'][0]['sourceX'],
-            input_data['results'][0]['sourceY'],
-            input_data['results'][0]['sourceZ'],
+            result_data['sourceX'],
+            result_data['sourceY'],
+            result_data['sourceZ'],
         ])
 
 
@@ -293,10 +413,10 @@ class PyroomacousticsMethod(SimulationMethod):
         receiver_positions : np.ndarray
             Array of receiver positions with shape (n_receivers, 3).
         """
-        input_data = self.configuration
+        result_data = self._get_result_data()
 
-        num_receivers = len(input_data['results'][0]['responses'])
-        response_section = input_data['results'][0]['responses']
+        num_receivers = len(result_data['responses'])
+        response_section = result_data['responses']
         receiver_pos = np.zeros((num_receivers, 3), dtype=float)
 
         for i in range(num_receivers):
@@ -379,22 +499,14 @@ class PyroomacousticsMethod(SimulationMethod):
 
         print("setup_simulation: setting up simulation")
 
+        # Ensure default settings are set
+        self.set_default_simulation_settings()
+        settings = self._get_simulation_settings()
 
-        input_data = self.configuration
-        extended_input_data = self.set_default_simulation_settings()
-
-        sampling_rate = extended_input_data["simulationSettings"].get(
-            "sampling_rate"
-        )
-        image_source_order = extended_input_data["simulationSettings"].get(
-            "image_source_order"
-        )
-        ray_tracing = bool(
-            extended_input_data["simulationSettings"].get("ray_tracing")
-        )
-        air_absorption = bool(
-            extended_input_data["simulationSettings"].get("air_absorption")
-        )
+        sampling_rate = settings.get("sampling_rate")
+        image_source_order = settings.get("image_source_order")
+        ray_tracing = bool(settings.get("ray_tracing"))
+        air_absorption = bool(settings.get("air_absorption"))
 
         room = pra.Room(
             walls,
@@ -404,7 +516,7 @@ class PyroomacousticsMethod(SimulationMethod):
             air_absorption=air_absorption,
         )
 
-        frequencies = input_data["results"][0]["frequencies"]
+        frequencies = self._get_result_data()["frequencies"]
 
         room.octave_bands.base_freq = frequencies[0]
         room.n_octave_bands = len(frequencies)
@@ -444,11 +556,7 @@ class PyroomacousticsMethod(SimulationMethod):
 
         """
 
-        input_data = self.configuration
-        input_data['results'][0]['responses'][0][
-            'receiverResults'] = rir.tolist()
-
-        self.configuration = input_data
+        self._update_response_data(0, 'receiverResults', rir.tolist())
 
     def _export_room_acoustic_parameters_to_json(
             self,
@@ -466,13 +574,12 @@ class PyroomacousticsMethod(SimulationMethod):
 
         """
 
-        input_data = self.configuration
-        response_params = input_data[
-            'results'][0]['responses'][0]['parameters']
-        for key in ['t20', 't30', 'edt', 'd50', 'c80', 'ts', 'spl_t0_freq']:
-            response_params[key] = parameters[key]
-
-        self.configuration = input_data
+        # Prepare parameters dictionary with only the keys we want to update
+        params_to_update = {
+            key: parameters[key]
+            for key in ['t20', 't30', 'edt', 'd50', 'c80', 'ts', 'spl_t0_freq']
+        }
+        self._update_response_parameters(0, params_to_update)
 
     def export_rir_to_csv(self) -> None:
         """Export the computed RIRs to a CSV file.
@@ -490,11 +597,13 @@ class PyroomacousticsMethod(SimulationMethod):
 
         """
         json_file_path = self.input_json_path
-        input_data = self.configuration
         output_csv_path = str(json_file_path).replace('.json', '_pressure.csv')
 
-        sampling_rate = input_data['simulationSettings']['sampling_rate']
-        rir = input_data['results'][0]['responses'][0]['receiverResults']
+        settings = self._get_simulation_settings()
+        sampling_rate = settings['sampling_rate']
+
+        response_data = self._get_response_data(0)
+        rir = response_data['receiverResults']
         times = np.arange(len(rir)) / sampling_rate
 
         df = pd.DataFrame({'t': times, 'pressure': rir})
