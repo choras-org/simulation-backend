@@ -5,6 +5,7 @@ import os
 
 import numpy as np
 import numpy.testing as npt
+import pytest
 
 from pyroomacoustics_interface import PyroomacousticsMethod
 
@@ -104,12 +105,22 @@ def test_export_pressure_csv(create_temporary_input_file):
         np.arange(len(rir)) / config['simulationSettings']['sampling_rate'],
     )
 
-def test_run_simulation(create_temporary_input_file):
+
+@pytest.mark.parametrize('config_file', [
+    {'sampling_rate': 8000, 'image_source_order': 1},
+    {'sampling_rate': 16000, 'image_source_order': 1},
+    {'sampling_rate': 48000, 'image_source_order': 1},
+    {'number_of_rays': 1000, 'image_source_order': 1},
+    {'number_of_rays': 5000, 'image_source_order': 1},
+    {'number_of_rays': 5000, 'image_source_order': -1},
+    {'number_of_rays': 1000, 'image_source_order': 1, "detector_radius": 0.1},
+], indirect=True)
+def test_run_simulation(config_file):
     """Run the full simulation pipeline."""
-    interface = PyroomacousticsMethod(create_temporary_input_file)
+    interface = PyroomacousticsMethod(config_file)
     interface.run_simulation()
 
-    with open(create_temporary_input_file, 'r') as f:
+    with open(config_file, 'r') as f:
         data = json.load(f)
 
     rir = np.array(data['results'][0]['responses'][0]['receiverResults'])
@@ -118,3 +129,13 @@ def test_run_simulation(create_temporary_input_file):
     assert len(rir) > 0
     assert isinstance(rir, np.ndarray)
     assert np.any(np.abs(rir) >= 1e-6)
+
+
+@pytest.mark.parametrize('config_file', [
+    {'number_of_rays': -1},
+], indirect=True)
+def test_invalid_number_rays(config_file):
+    """Run the full simulation pipeline with invalid input data."""
+    interface = PyroomacousticsMethod(config_file)
+    with pytest.raises(ValueError, match="not allowed"):
+        interface.run_simulation()
