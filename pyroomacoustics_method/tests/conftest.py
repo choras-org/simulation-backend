@@ -182,6 +182,14 @@ def json_file_factory():
 
 
 @pytest.fixture
+def create_modified_input_file(request, json_file_factory):
+    """Fixture that creates a JSON file based on test parameters."""
+    gen = json_file_factory(**request.param)
+    json_path = next(gen)
+    yield json_path
+
+
+@pytest.fixture
 def mock_requests_post():
     """Fixture to mock requests.post for CLI tests.
 
