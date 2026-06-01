@@ -30,7 +30,7 @@ dependencies = [
     "numpy>=1.23.0",
     "matplotlib",
     "requests",
-    "acousticDE",
+    "acousticDE @ git+https://github.com/Building-acoustics-TU-Eindhoven/acousticDE.git@6d2948a2df06a2344eae844f8fd05f52a516e981",
 ]
 
 [project.optional-dependencies]
