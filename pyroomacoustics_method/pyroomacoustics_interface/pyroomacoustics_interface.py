@@ -463,14 +463,6 @@ class PyroomacousticsMethod(SimulationMethod):
                 stacklevel=2
             )
 
-        if 'ray_tracing' not in settings:
-            settings['ray_tracing'] = True
-            warnings.warn(
-                "Ray tracing setting not specified. "
-                "Defaulting to True.",
-                stacklevel=2
-            )
-
         if 'air_absorption' not in settings:
             settings['air_absorption'] = True
             warnings.warn(
@@ -539,7 +531,6 @@ class PyroomacousticsMethod(SimulationMethod):
 
         sampling_rate = settings.get("sampling_rate")
         image_source_order = settings.get("image_source_order")
-        ray_tracing = bool(settings.get("ray_tracing"))
         num_rays = int(settings.get('ray_tracer_number_of_rays'))
         detector_radius = float(settings.get('ray_tracer_detector_radius'))
         ray_tracer_energy_threshold_dB = float(
@@ -554,7 +545,7 @@ class PyroomacousticsMethod(SimulationMethod):
             walls,
             fs=sampling_rate,
             max_order=image_source_order,
-            ray_tracing=ray_tracing,
+            ray_tracing=True,
             air_absorption=air_absorption,
         )
 
