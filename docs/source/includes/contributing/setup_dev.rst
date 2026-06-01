@@ -5,7 +5,7 @@ Ready to contribute? Here's how to set up your development environment for CHORA
 We always recommend creating a `fork <https://docs.github.com/en/get-started/quickstart/fork-a-repo/>`_ of the repository you would like to contribute to.
 This allows you to freely develop and test your changes without affecting the main repository until you're ready to submit a pull request.
 
-1. Fork the repository you want to contribute to (e.g., `choras/simulation-backend <https://github.com/choras/simulation-backend>`_). Please make sure that you enable giving maintainers access to your fork, so we can help you if you run into issues.
+1. Fork the repository you want to contribute to (e.g., `choras-org/simulation-backend <https://github.com/choras-org/simulation-backend>`_). Please make sure that you enable giving maintainers access to your fork, so we can help you if you run into issues.
 2. Clone your forked main repository to your local machine:
 
    .. code-block:: bash
@@ -39,7 +39,7 @@ This allows you to freely develop and test your changes without affecting the ma
 
    .. code-block:: bash
 
-      git remote add upstream https://github.com/choras/simulation-backend
+      git remote add upstream https://github.com/choras-org/simulation-backend
 
 6. Finally, create a new branch for your changes:
 

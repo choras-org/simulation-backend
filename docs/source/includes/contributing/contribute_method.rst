@@ -131,7 +131,7 @@ Next Steps After Generation
 
    .. code-block:: bash
 
-      docker build -t <method_name_lower>_method . --platform linux/amd64
+      docker build -f ./Dockerfile ../ --platform=linux/amd64 -t <method_name_lower>-test:latest
 
 
 Dependencies
@@ -261,9 +261,28 @@ Extracting Source/Receiver Positions
 Writing Results
 ~~~~~~~~~~~~~~~
 
+For impulse responses, the sampling rate is defined by the frontend and can be
+assessed by ``input_data["simulationSettings"]["sampling_rate"]``. The impulse
+response is provided as follows:
+
 .. code-block:: python
 
    result_container["results"][0]["responses"][0]["receiverResults"] = results.tolist()
 
    with open(json_file_path, "w") as json_output:
        json_output.write(json.dumps(result_container, indent=4))
+
+
+for energy time curves - The results are appended for each frequency band.
+Here is an example for the ``energy_decay_curve`` for the 125 Hz frequency band
+and its ``times_vector``:
+
+.. code-block:: python
+   result_container["results"][0]["responses"][i_rec]["receiverResults"].append(
+      {
+         "data": energy_decay_curve.tolist(),
+         "t": times_vector.tolist(),
+         "frequency": 125,
+         "type": "edc",
+      }
+   )
