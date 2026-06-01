@@ -477,6 +477,38 @@ class PyroomacousticsMethod(SimulationMethod):
                 stacklevel=2
             )
 
+        if 'ray_tracer_number_of_rays' not in settings:
+            settings['ray_tracer_number_of_rays'] = 10_000
+            warnings.warn(
+                "Number of rays not specified. "
+                "Defaulting to True.",
+                stacklevel=2,
+            )
+
+        if 'ray_tracer_detector_radius' not in settings:
+            settings['ray_tracer_detector_radius'] = 0.5
+            warnings.warn(
+                "Detector radius not specified. "
+                "Defaulting to 0.5 m.",
+                stacklevel=2,
+            )
+
+        if 'ray_tracer_time_threshold' not in settings:
+            settings['ray_tracer_time_threshold'] = 10.
+            warnings.warn(
+                "Ray tracer time threshold not specified. "
+                "Defaulting to 10 seconds",
+                stacklevel=2,
+            )
+
+        if 'ray_tracer_energy_threshold' not in settings:
+            settings['ray_tracer_energy_threshold'] = -70
+            warnings.warn(
+                "Ray tracer energy threshold not specified. "
+                "Defaulting to -70 dB re 1, i.e. 1e-7 on a linear scale.",
+                stacklevel=2,
+            )
+
         return input_data
 
 
@@ -506,6 +538,14 @@ class PyroomacousticsMethod(SimulationMethod):
         sampling_rate = settings.get("sampling_rate")
         image_source_order = settings.get("image_source_order")
         ray_tracing = bool(settings.get("ray_tracing"))
+        num_rays = int(settings.get('ray_tracer_number_of_rays'))
+        detector_radius = float(settings.get('ray_tracer_detector_radius'))
+        ray_tracer_energy_threshold_dB = float(
+            settings.get('ray_tracer_energy_threshold'))
+        ray_tracer_energy_threshold = 10**(ray_tracer_energy_threshold_dB/10)
+        ray_tracer_time_threshold = float(
+            settings.get('ray_tracer_time_threshold'))
+
         air_absorption = bool(settings.get("air_absorption"))
 
         room = pra.Room(
@@ -537,6 +577,13 @@ class PyroomacousticsMethod(SimulationMethod):
 
         receiver_pos = self.get_receiver_positions()
         room.add_microphone(receiver_pos.T)
+
+        room.set_ray_tracing(
+            n_rays=num_rays,
+            receiver_radius=detector_radius,
+            energy_thres=ray_tracer_energy_threshold,
+            time_thres=ray_tracer_time_threshold,
+        )
 
         print("setup_simulation: setup done!")
 

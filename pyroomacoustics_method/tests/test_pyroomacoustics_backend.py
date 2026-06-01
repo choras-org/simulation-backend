@@ -106,24 +106,29 @@ def test_export_pressure_csv(create_temporary_input_file):
     )
 
 
-@pytest.mark.parametrize('config_file', [
+@pytest.mark.parametrize('create_modified_input_file', [
     {'sampling_rate': 8000, 'image_source_order': 1},
     {'sampling_rate': 16000, 'image_source_order': 1},
     {'sampling_rate': 48000, 'image_source_order': 1},
-    {'number_of_rays': 1000, 'image_source_order': 1},
-    {'number_of_rays': 5000, 'image_source_order': 1},
-    {'number_of_rays': 5000, 'image_source_order': -1},
-    {'number_of_rays': 1000, 'image_source_order': 1, "detector_radius": 0.1},
+    {'ray_tracer_number_of_rays': 1000, 'image_source_order': 1},
+    {'ray_tracer_number_of_rays': 5000, 'image_source_order': 1},
+    {'ray_tracer_number_of_rays': 5000, 'image_source_order': -1},
+    {
+        'number_of_rays': 1000,
+        'image_source_order': 1,
+        "ray_tracer_detector_radius": 0.1},
 ], indirect=True)
-def test_run_simulation(config_file):
+def test_run_simulation(create_modified_input_file):
     """Run the full simulation pipeline."""
-    interface = PyroomacousticsMethod(config_file)
+
+    input_file_path = create_modified_input_file
+    interface = PyroomacousticsMethod(input_file_path)
     interface.run_simulation()
 
-    with open(config_file, 'r') as f:
-        data = json.load(f)
+    with open(input_file_path, 'r') as f:
+        input_config = json.load(f)
 
-    rir = np.array(data['results'][0]['responses'][0]['receiverResults'])
+    rir = np.array(input_config['results'][0]['responses'][0]['receiverResults'])
 
     assert rir is not None
     assert len(rir) > 0
@@ -131,11 +136,42 @@ def test_run_simulation(config_file):
     assert np.any(np.abs(rir) >= 1e-6)
 
 
-@pytest.mark.parametrize('config_file', [
-    {'number_of_rays': -1},
+@pytest.mark.parametrize('create_modified_input_file', [
+    {
+        'ray_tracing': True,
+        'ray_tracer_number_of_rays': 1000,
+        'ray_tracer_detector_radius': 0.1,
+        'ray_tracer_energy_threshold': -45,
+        'ray_tracer_time_threshold': 1,
+    },
+    {'ray_tracing': True, 'ray_tracer_number_of_rays': 5000},
 ], indirect=True)
-def test_invalid_number_rays(config_file):
+def test_run_simulation_ray_tracer_settings(
+        create_modified_input_file,
+    ):
+    """Run the full simulation pipeline with ray tracing settings."""
+    input_file_path = create_modified_input_file
+
+    interface = PyroomacousticsMethod(input_file_path)
+    interface.run_simulation()
+
+    with open(input_file_path, 'r') as f:
+        input_config = json.load(f)
+
+    rir = np.array(
+        input_config['results'][0]['responses'][0]['receiverResults'])
+
+    assert rir is not None
+    assert len(rir) > 0
+    assert isinstance(rir, np.ndarray)
+    assert np.any(np.abs(rir) >= 1e-6)
+
+
+@pytest.mark.parametrize('create_modified_input_file', [
+    {'ray_tracer_number_of_rays': -1},
+], indirect=True)
+def test_invalid_number_rays(create_modified_input_file):
     """Run the full simulation pipeline with invalid input data."""
-    interface = PyroomacousticsMethod(config_file)
+    interface = PyroomacousticsMethod(create_modified_input_file)
     with pytest.raises(ValueError, match="not allowed"):
         interface.run_simulation()

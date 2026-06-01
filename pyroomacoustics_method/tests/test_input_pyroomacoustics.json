@@ -12,7 +12,11 @@
   "simulationSettings": {
     "sampling_rate": 5000,
     "image_source_order": 2,
-    "ray_tracing": true
+    "ray_tracing": true,
+    "ray_tracer_number_of_rays": 10000,
+    "ray_tracer_detector_radius": 0.5,
+    "ray_tracer_time_threshold": 10.0,
+    "ray_tracer_energy_threshold": -70.0
   },
   "results": [
     {
