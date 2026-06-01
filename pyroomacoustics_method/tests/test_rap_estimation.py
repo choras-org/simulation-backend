@@ -44,7 +44,6 @@ def test_export_parameters_to_dict(create_temporary_input_file):
         output_file = json.load(f)
 
     param_names = list(parameters.keys())
-    print(param_names)
 
     for param_name in param_names:
         assert output_file['results'][0]['responses'][0][

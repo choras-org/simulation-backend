@@ -114,7 +114,7 @@ def test_export_pressure_csv(create_temporary_input_file):
     {'ray_tracer_number_of_rays': 5000, 'image_source_order': 1},
     {'ray_tracer_number_of_rays': 5000, 'image_source_order': -1},
     {
-        'number_of_rays': 1000,
+        'ray_tracer_number_of_rays': 1000,
         'image_source_order': 1,
         "ray_tracer_detector_radius": 0.1},
 ], indirect=True)
@@ -128,7 +128,9 @@ def test_run_simulation(create_modified_input_file):
     with open(input_file_path, 'r') as f:
         input_config = json.load(f)
 
-    rir = np.array(input_config['results'][0]['responses'][0]['receiverResults'])
+    rir = np.array(
+        input_config["results"][0]["responses"][0]["receiverResults"]
+    )
 
     assert rir is not None
     assert len(rir) > 0

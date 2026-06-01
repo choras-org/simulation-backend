@@ -169,7 +169,9 @@ class PyroomacousticsMethod(SimulationMethod):
             Dictionary of parameter key-value pairs to update.
         """
         config = self.configuration
-        response_params = config['results'][0]['responses'][response_idx]['parameters']
+        response_params = config["results"][0]["responses"][response_idx][
+            "parameters"
+        ]
         for key, value in parameters.items():
             response_params[key] = value
         self.configuration = config
@@ -481,7 +483,7 @@ class PyroomacousticsMethod(SimulationMethod):
             settings['ray_tracer_number_of_rays'] = 10_000
             warnings.warn(
                 "Number of rays not specified. "
-                "Defaulting to True.",
+                "Defaulting to 10000.",
                 stacklevel=2,
             )
 
@@ -561,13 +563,13 @@ class PyroomacousticsMethod(SimulationMethod):
         room.octave_bands.base_freq = frequencies[0]
         room.n_octave_bands = len(frequencies)
 
-        alpha, m_pyfar, _  = pf.constants.air_attenuation(
+        # This avoids a bug in pyroomacoustics which prevents setting the
+        # air attenuation for frequency dependent data
+        _, m_pyfar, _  = pf.constants.air_attenuation(
             20,
             frequencies,
             relative_humidity=50/1e2)
-        m = np.squeeze(m_pyfar.freq)
-
-        room.air_absorption = m
+        room.air_absorption = np.squeeze(m_pyfar.freq)
 
         # Add sources
         source_pos = self.get_source_positions()
@@ -666,7 +668,7 @@ class PyroomacousticsMethod(SimulationMethod):
 def calculate_room_acoustic_parameters(
         room_impulse_response: pf.Signal,
         bands: np.ndarray | list[float],
-    ) -> dict[str, np.ndarray]:
+    ) -> dict[str, list[float]]:
     """Calculate room acoustic parameters from the RIR.
 
     Parameters

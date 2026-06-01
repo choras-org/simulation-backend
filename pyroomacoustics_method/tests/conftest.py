@@ -186,7 +186,13 @@ def create_modified_input_file(request, json_file_factory):
     """Fixture that creates a JSON file based on test parameters."""
     gen = json_file_factory(**request.param)
     json_path = next(gen)
-    yield json_path
+    # Make sure that the generator is properly closed after the test function
+    # finalizes to ensure cleanup of temporary files
+    try:
+        yield json_path
+    finally:
+        gen.close()
+
 
 
 @pytest.fixture

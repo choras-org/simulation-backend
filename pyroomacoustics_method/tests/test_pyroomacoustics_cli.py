@@ -11,10 +11,14 @@ from pyroomacoustics_interface import main
     {'sampling_rate': 8000, 'image_source_order': 1},
     {'sampling_rate': 16000, 'image_source_order': 1},
     {'sampling_rate': 48000, 'image_source_order': 1},
-    {'number_of_rays': 1000, 'image_source_order': 1},
-    {'number_of_rays': 5000, 'image_source_order': 1},
-    {'number_of_rays': 5000, 'image_source_order': -1},
-    {'number_of_rays': 1000, 'image_source_order': 1, "detector_radius": 0.1},
+    {'ray_tracer_number_of_rays': 1000, 'image_source_order': 1},
+    {'ray_tracer_number_of_rays': 5000, 'image_source_order': 1},
+    {'ray_tracer_number_of_rays': 5000, 'image_source_order': -1},
+    {
+        'ray_tracer_number_of_rays': 1000,
+        'image_source_order': 1,
+        "ray_tracer_detector_radius": 0.1
+    },
 ], indirect=True)
 def test_pyroomacoustics_method_cli(
         mock_requests_post,
