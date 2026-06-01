@@ -689,17 +689,20 @@ def calculate_room_acoustic_parameters(
     bands = np.asarray(bands, dtype=float)
 
     start_sample = pf.dsp.find_impulse_response_start(room_impulse_response)
-    room_impulse_response_shifted = pf.dsp.time_shift(
-        room_impulse_response,
-        -start_sample,
-        unit='samples',
-    )
 
     rir_bands = pf.dsp.filter.fractional_octave_bands(
-        room_impulse_response_shifted,
+        room_impulse_response,
         num_fractions=1,
         frequency_range=[np.min(bands), np.max(bands)],
         order=6,
+    )
+
+    rir_bands_shifted = pf.dsp.time_shift(
+        rir_bands,
+        -start_sample,
+        unit='samples',
+        mode='linear',
+        pad_value=np.nan,
     )
 
     bands = pf.constants.fractional_octave_frequencies_nominal(
@@ -714,7 +717,13 @@ def calculate_room_acoustic_parameters(
     D_50 = np.zeros(n_bands, dtype=float)
     C_80 = np.zeros(n_bands, dtype=float)
 
-    edc_bands = pyrato.edc.schroeder_integration(rir_bands, is_energy=False)
+    edc_bands = pyrato.edc.schroeder_integration(
+        rir_bands_shifted,
+        is_energy=False
+    )
+
+    edc_bands = pf.dsp.normalize(edc_bands, nan_policy='omit')
+
     EDT = pyrato.parameters.reverberation_time_linear_regression(
         edc_bands, T='EDT')
     T_20 = pyrato.parameters.reverberation_time_linear_regression(
