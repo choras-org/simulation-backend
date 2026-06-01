@@ -248,11 +248,8 @@ class PyroomacousticsMethod(SimulationMethod):
         The geometry is read from a .geo file specified in the JSON input file.
         The absorption coefficients are directly read from the JSON file.
 
-        Parameters
-        ----------
-        json_file_path : str | Path
-            Path to the JSON file containing room geometry and absorption
-            coefficients.
+        This method reads geometry and absorption coefficients from the
+        configuration referenced by ``self.input_json_path``.
 
         Returns
         -------
@@ -626,10 +623,8 @@ class PyroomacousticsMethod(SimulationMethod):
 
         This is a legacy helper function which will be obsolete in the future.
 
-        Parameters
-        ----------
-        output_csv_path : str | Path
-            Path to the output CSV file where the RIRs will be saved.
+        The CSV is written next to the input JSON file using the same basename
+        and the suffix ``_pressure.csv``.
 
         Returns
         -------
@@ -664,7 +659,7 @@ def calculate_room_acoustic_parameters(
 
     Parameters
     ----------
-    room_impulse_response : pf.TimeData
+    room_impulse_response : pf.Signal
         The room impulse response.
     bands : np.ndarray or list of float
         The frequency bands for which to calculate acoustic parameters.

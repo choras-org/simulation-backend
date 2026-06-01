@@ -50,7 +50,7 @@ def test_get_results(create_temporary_input_file):
         assert source_pos in results
 
 
-def test_get_reponse_data(create_temporary_input_file):
+def test_get_response_data(create_temporary_input_file):
     """Test the get_response_data function."""
     interface = PyroomacousticsMethod(create_temporary_input_file)
     idx_receiver = 0
