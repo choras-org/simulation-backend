@@ -146,6 +146,8 @@ def test_run_simulation(create_modified_input_file):
         'ray_tracer_time_threshold': 1,
     },
     {'ray_tracer_number_of_rays': 5000},
+    {'speed_of_sound': 343.0},
+    {'speed_of_sound': 200.0},
 ], indirect=True)
 def test_run_simulation_ray_tracer_settings(
         create_modified_input_file,

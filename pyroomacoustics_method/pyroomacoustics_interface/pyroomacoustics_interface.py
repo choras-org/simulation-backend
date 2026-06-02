@@ -209,6 +209,11 @@ class PyroomacousticsMethod(SimulationMethod):
 
         print("pyroomacoustics_method: starting simulation")
 
+        pra.constants.set(
+            'c',
+            float(self._get_simulation_settings().get(
+                "speed_of_sound", 343.0)),
+        )
 
         walls = self.import_room_geometry()
         self._write_progress(20)
