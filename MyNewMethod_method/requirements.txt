@@ -1,5 +1,0 @@
-matplotlib
-git+https://github.com/Saptarshi666/MyNewMethod.git
-numpy
-matplotlib
-requests

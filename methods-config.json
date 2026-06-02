@@ -20,16 +20,6 @@
         "documentationURL":"https://building-acoustics-tu-eindhoven.github.io/acousticDE/index.html"
     },
     {
-        "simulationType": "MyNewMethod",
-        "containerImage": "mynewmethod_image:latest", 
-        "envVars": {},
-        "label": "My New Method",
-        "entryFile":"MyNewMethodInterface.py",
-        "settings":"my_new_setting.json",
-        "repositoryURL":"",
-        "documentationURL":""
-    },
-    {
         "simulationType": "Pyroomacoustics",
         "containerImage": "pyroomacoustics_image:latest",
         "envVars": {},
