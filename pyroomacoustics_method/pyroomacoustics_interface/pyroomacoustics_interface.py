@@ -368,6 +368,14 @@ class PyroomacousticsMethod(SimulationMethod):
                     f"Got type {type(absorption_coeffs_config)}."
                 )
 
+            # This is way to set scattering coefficients in pyroomacoustics
+            # until the setting becomes available through the materials
+            # interface in the frontend.
+            scattering_coefficient = self._get_simulation_settings().get(
+                'global_scattering_coefficient', 0.1)
+            scattering_coefficients = np.ones_like(
+                absorption_coeffs) * scattering_coefficient
+
             material = pra.Material(
                 energy_absorption={
                     'description': surface_name,
@@ -377,7 +385,7 @@ class PyroomacousticsMethod(SimulationMethod):
                 scattering={
                     'description': surface_name,
                     'center_freqs': frequencies,
-                    'coeffs': np.ones_like(absorption_coeffs)*0.1,
+                    'coeffs': scattering_coefficients,
                 }
             )
 

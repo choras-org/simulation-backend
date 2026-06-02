@@ -12,6 +12,8 @@
   "simulationSettings": {
     "sampling_rate": 5000,
     "image_source_order": 2,
+    "speed_of_sound": 343.0,
+    "global_scattering_coefficient": 0.1,
     "ray_tracer_number_of_rays": 10000,
     "ray_tracer_detector_radius": 0.5,
     "ray_tracer_time_threshold": 10.0,
