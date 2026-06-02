@@ -22,7 +22,7 @@
             "sourceX": 2,
             "sourceY": 2,
             "sourceZ": 1.5,
-            "resultType": "MyNewMethod",
+            "resultType": "RIR",
             "frequencies": [
                 125,
                 250,
