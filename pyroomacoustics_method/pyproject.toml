@@ -49,6 +49,7 @@ tests = [
     "watchdog",
     "ruff",
     "coverage",
+    "gmsh",
 ]
 
 docs = [
