@@ -1,0 +1,23 @@
+{
+    "extends": "choras-baseline",
+    "method": "Pyroomacoustics",
+    "notes": "Geometric-acoustics (image-source / ray tracing) is far more tolerant of surface defects than the wave-based solvers. Topology imperfections that only matter for volume meshing are downgraded here.",
+    "issues": {
+        "t_junction": {
+            "compatibility": "warning"
+        },
+        "intersection": {
+            "compatibility": "warning"
+        },
+        "non_planar_face": {
+            "compatibility": "warning"
+        },
+        "small_face": {
+            "compatibility": "compatible"
+        },
+        "boundary_edge": {
+            "compatibility": "warning",
+            "description": "Open edges reduce energy conservation but do not stop a ray-tracing run."
+        }
+    }
+}
