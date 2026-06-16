@@ -38,5 +38,15 @@
         "entryFile": "__main__.py",
         "repositoryURL": "https://github.com/LCAV/pyroomacoustics",
         "documentationURL": "https://pyroomacoustics.readthedocs.io"
+    },
+    {
+        "simulationType": "misuka",
+        "containerImage": "misuka_image:latest", 
+        "envVars": {},
+        "label": "misuka",
+        "entryFile":"misukaInterface.py",
+        "settings":"misuka_setting.json",
+        "repositoryURL":"https://github.com/misuka-renderer/misuka.git",
+        "documentationURL":"https://www.tu.berlin/en/ak/research/projects/differentiable-acoustic-path-tracing"
     }
 ]

@@ -1,0 +1,162 @@
+{
+    "type": "simulationSettings",
+    "options": [
+        {
+            "name": "Rays per Frequencies",
+            "id": "rays_per_frequency",
+            "type": "integer", 
+            "display": "text",
+            "min": 1000,
+            "max": 4194304,
+            "step": 524288,
+            "default": 1048576
+        },
+        {
+            "name": "Maximum Time to Simulate",
+            "id": "max_time",
+            "type": "float",
+            "display": "text",
+            "min": 0.01,
+            "max": 15,
+            "step": 1.0,
+            "default": 0.1,
+            "endAdornment": "s"
+        },
+        {
+            "name": "Time Bins",
+            "id": "sampling_rate",
+            "type": "integer",
+            "display": "text",
+            "min": 100,
+            "max": 30000,
+            "step": 1000,
+            "default": 1000,
+            "endAdornment": "Hz"
+        },
+        {
+            "name": "Sound Power of Source",
+            "id": "sound_power_W",
+            "display": "text",
+            "type": "float",
+            "min": 0.1,
+            "max": 50,
+            "step": 5,
+            "default": 1,
+            "endAdornment": "W"
+        },
+        {
+            "name": "Speed of Sound",
+            "id": "speed_of_sound",
+            "display": "text",
+            "type": "float",
+            "min": 200,
+            "max": 360,
+            "step": 5,
+            "default": 343,
+            "endAdornment": "m/s"
+        },
+        {
+            "name": "Dynamic Range",
+            "id": "dynamic_range_db",
+            "display": "text",
+            "type": "integer",
+            "min": 5,
+            "max": 200,
+            "step": 10,
+            "default": 100,
+            "endAdornment": "dB"
+        },
+        {
+            "name": "Scattering for 125 Hz",
+            "id": "scattering_125",
+            "display": "text",
+            "type": "float",
+            "min": 0,
+            "max": 1,
+            "step": 0.1,
+            "default": 0.1,
+            "endAdornment": ""
+        },
+        {
+            "name": "Scattering for 250 Hz",
+            "id": "scattering_250",
+            "display": "text",
+            "type": "float",
+            "min": 0,
+            "max": 1,
+            "step": 0.1,
+            "default": 0.1,
+            "endAdornment": ""
+        },
+        {
+            "name": "Scattering for 500 Hz",
+            "id": "scattering_500",
+            "display": "text",
+            "type": "float",
+            "min": 0,
+            "max": 1,
+            "step": 0.1,
+            "default": 0.1,
+            "endAdornment": ""
+        },
+        {
+            "name": "Scattering for 1000 Hz",
+            "id": "scattering_1000",
+            "display": "text",
+            "type": "float",
+            "min": 0,
+            "max": 1,
+            "step": 0.1,
+            "default": 0.1,
+            "endAdornment": ""
+        },
+        {
+            "name": "Scattering for 2000 Hz",
+            "id": "scattering_2000",
+            "display": "text",
+            "type": "float",
+            "min": 0,
+            "max": 1,
+            "step": 0.1,
+            "default": 0.1,
+            "endAdornment": ""
+        },
+        {
+            "name": "Scattering for 4000 Hz",
+            "id": "scattering_4000",
+            "display": "text",
+            "type": "float",
+            "min": 0,
+            "max": 1,
+            "step": 0.1,
+            "default": 0.1,
+            "endAdornment": ""
+        }
+    ],
+
+    "_future_options": [
+        {
+            "name": "Maximum Energy Loss",
+            "id": "max_energy_loss",
+            "type": "integer", 
+            "display": "text",
+            "min": 0,
+            "max": 100,
+            "step": 1,
+            "default": 50,
+            "endAdornment": "%"
+        },
+        {
+            "name": "Processing Unit",
+            "id": "comp_backend",
+            "type": "string",
+            "display": "radio",
+            "options": 
+            {
+                "CPU": "cpu", 
+                "CUDA GPU": "gpu"
+            },
+            "default": "cpu"
+        }
+    ]
+}

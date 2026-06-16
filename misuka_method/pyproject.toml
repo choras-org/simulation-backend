@@ -1,0 +1,86 @@
+[project]
+name = "misuka_interface"
+version = "0.1.0"
+description = ""
+requires-python = ">=3.9,<3.14"
+authors = [
+    { name = "Tobias Jüterbock", email = "a.jueterbock@tu-berlin.de" },
+]
+keywords = [
+
+    "acoustic simulation",
+
+    "geometrical acoustics",
+
+    "open-source",
+
+    "acoustic path tracing",
+
+]
+
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Natural Language :: English",
+    "Programming Language :: Python :: 3",
+
+    "Programming Language :: Python :: 3.9",
+
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+
+    "Programming Language :: Python :: 3.14",
+
+]
+dependencies = [
+    "numpy>=1.23.0",
+    "requests",
+    "gmsh",
+    "meshio",
+    "pyfar",
+    "pyrato",
+    "pandas",
+]
+
+[project.optional-dependencies]
+deploy = [
+    "twine",
+    "wheel",
+    "build",
+    "setuptools",
+    "bump-my-version",
+]
+
+tests = [
+    "pytest",
+    "pytest-cov",
+    "watchdog",
+    "ruff",
+    "coverage",
+]
+
+docs = [
+    "sphinx",
+    "autodocsumm>=0.2.14",
+    "pydata-sphinx-theme",
+    "sphinx_mdinclude",
+    "sphinx-design",
+    "sphinx-favicon",
+    "sphinx-reredirects",
+]
+
+dev = ["misuka_interface[deploy,tests,docs]"]
+
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["misuka_interface"]
+
+[project.scripts]
+misuka_interface = "misuka_interface:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
