@@ -5,7 +5,7 @@
         "envVars": {"CUDA_VISIBLE_DEVICES": "0"},
         "label": "Discontinuous Galerkin method",
         "settings":"dg_setting.json",
-        "geometryCompatibility":"dg_method/dg_geometry_compatibility.json",
+        "geometryCompatibility":"dg_method/geometry_compatibility.json",
         "entryFile":"DGinterface.py",
         "repositoryURL":"https://github.com/Building-acoustics-TU-Eindhoven/edg-acoustics/",
         "documentationURL":"https://dg-roomacoustics.readthedocs.io/en/latest/"
@@ -16,7 +16,7 @@
         "envVars": {},
         "label": "Diffusion Equation method",
         "settings":"de_setting.json",
-        "geometryCompatibility":"de_method/de_geometry_compatibility.json",
+        "geometryCompatibility":"de_method/geometry_compatibility.json",
         "entryFile":"DEinterface.py",
         "repositoryURL":"https://github.com/Building-acoustics-TU-Eindhoven/acousticDE/",
         "documentationURL":"https://building-acoustics-tu-eindhoven.github.io/acousticDE/index.html"
@@ -37,7 +37,7 @@
         "envVars": {},
         "label": "Pyroomacoustics",
         "settings": "pyroomacoustics_setting.json",
-        "geometryCompatibility": "pyroomacoustics_method/pyroomacoustics_geometry_compatibility.json",
+        "geometryCompatibility": "pyroomacoustics_method/geometry_compatibility.json",
         "entryFile": "__main__.py",
         "repositoryURL": "https://github.com/LCAV/pyroomacoustics",
         "documentationURL": "https://pyroomacoustics.readthedocs.io"

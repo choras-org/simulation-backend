@@ -1,0 +1,13 @@
+{
+    "extends": "choras-baseline",
+    "method": "Pyroomacoustics",
+    "notes": "Example notes",
+    "issues": {
+        "non_planar_face": {
+            "compatibility": "compatible"
+        },
+        "small_face": {
+            "compatibility": "warning"
+        }
+    }
+}

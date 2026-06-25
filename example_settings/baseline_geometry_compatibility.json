@@ -10,65 +10,47 @@
         "duplicate_vertex": {
             "label": "Duplicate vertex",
             "description": "Two or more vertices share the same coordinates within tolerance.",
-            "defaultSeverity": "warn",
-            "autoRepairable": true,
             "compatibility": "warning"
         },
         "degenerate_face": {
             "label": "Degenerate face",
             "description": "A face has zero or near-zero area (collapsed/sliver triangle).",
-            "defaultSeverity": "warn",
-            "autoRepairable": true,
             "compatibility": "warning"
         },
         "non_planar_face": {
             "label": "Non-planar face",
             "description": "A polygon face whose vertices do not lie on a single plane.",
-            "defaultSeverity": "warn",
-            "autoRepairable": false,
             "compatibility": "warning"
         },
         "t_junction": {
             "label": "T-junction",
             "description": "A vertex lies on the interior of another face's edge, breaking edge connectivity.",
-            "defaultSeverity": "fatal",
-            "autoRepairable": true,
             "compatibility": "incompatible"
         },
         "intersection": {
             "label": "Self-intersection",
             "description": "Faces intersect each other, violating a piecewise-linear-complex (PLC).",
-            "defaultSeverity": "fatal",
-            "autoRepairable": true,
             "compatibility": "incompatible"
         },
         "boundary_edge": {
             "label": "Boundary edge",
             "description": "An edge bordered by a single face, indicating a non-watertight surface.",
-            "defaultSeverity": "fatal",
-            "autoRepairable": false,
             "compatibility": "incompatible"
         },
         "possible_hole": {
             "label": "Possible hole",
             "description": "A closed loop of boundary edges suggesting a gap in the surface.",
-            "defaultSeverity": "fatal",
-            "autoRepairable": false,
-            "compatibility": "incompatible"
-        },
-        "inverted_normal": {
-            "label": "Inverted normal",
-            "description": "A face is oriented inward instead of outward.",
-            "defaultSeverity": "warn",
-            "autoRepairable": true,
             "compatibility": "warning"
         },
         "small_face": {
             "label": "Small face",
             "description": "A face whose area is below the recommended size threshold.",
-            "defaultSeverity": "warn",
-            "autoRepairable": false,
             "compatibility": "warning"
+        },
+        "overlapping_face": {
+            "label": "Overlapping faces",
+            "description": "Two or more faces occupy the same space, causing potential simulation issues.",
+            "compatibility": "incompatible"
         }
     }
 }
