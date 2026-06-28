@@ -21,7 +21,8 @@
         "scattering_500": 0.1,
         "scattering_1000": 0.1,
         "scattering_2000": 0.1,
-        "scattering_4000": 0.1
+        "scattering_4000": 0.1,
+        "log_data": "no"
     },
     "results": [
         {

@@ -66,12 +66,12 @@ RUN cd /opt/misuka && \
 ENV PYTHONPATH="/opt/misuka/build/python"
 
 # Install remaining Python dependencies
-RUN python3.11 -m pip install numpy requests gmsh meshio pyfar==0.8.0 pyrato matplotlib
+
 
 WORKDIR /app
 
 COPY misuka_method /app/misuka_method
-RUN python3.11 -m pip install --no-deps /app/misuka_method
+RUN python3.11 -m pip install /app/misuka_method
 
 WORKDIR /app/misuka_method
 
