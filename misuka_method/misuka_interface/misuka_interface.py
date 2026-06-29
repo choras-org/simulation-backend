@@ -49,34 +49,41 @@ class misukaMethod(SimulationMethod):
             json_file_path: Path to the JSON configuration file
         """
 
-
         # ----------------------------------------------------------------
         # ------- fetching simulation settings and initialization -------
         # ----------------------------------------------------------------
 
-        print(f'Using variant: {mi.variant()}')
-
-        # Load the input JSON file
-        with open(json_file_path, "r") as json_file:
-            result_container = json.load(json_file)
-
         try:
-            simulation_settings = result_container["simulationSettings"]
-            speed_of_sound = simulation_settings["speed_of_sound"]
-            max_time = simulation_settings["max_time"]
-            time_bins = simulation_settings["sampling_rate"]
-            rpf = simulation_settings["rays_per_frequency"]
-            sound_power_W = simulation_settings["sound_power_W"]
-            n_receivers = len(result_container["results"][0]["responses"])
-            frequencies = result_container["results"][0]["frequencies"]
-            msh_path = result_container["msh_path"]
-            absorption_map = result_container["absorption_coefficients"]
-            dynamic_range_db = simulation_settings["dynamic_range_db"]
-            #log_data = simulation_settings["log_data"] == "yes"
+            # Load the input JSON file
+            with open(json_file_path, "r") as json_file:
+                result_container = json.load(json_file)
         except KeyError as e:
             raise KeyError(f"Could not fetch the simulation settings for misuka T.T: {e}")
         
-        source_intensity = sound_power_W
+        simulation_settings = result_container["simulationSettings"]
+        speed_of_sound = simulation_settings["speed_of_sound"]
+        max_time = simulation_settings["max_time"]
+        time_bins = simulation_settings["sampling_rate"]
+        rpf = simulation_settings["rays_per_frequency"]
+        sound_power_W = simulation_settings["sound_power_W"]
+        n_receivers = len(result_container["results"][0]["responses"])
+        frequencies = result_container["results"][0]["frequencies"]
+        msh_path = result_container["msh_path"]
+        absorption_map = result_container["absorption_coefficients"]
+        dynamic_range_db = simulation_settings["dynamic_range_db"] == "yes"
+        log_data = simulation_settings["log_data"] == "yes"
+        
+        if log_data: 
+            print(f'Using variant: {mi.variant()}')
+            print(f'Input value for speed of sound: {speed_of_sound}')
+            print(f'Input value for maximum simulation time: {max_time}')
+            print(f'Input value for time_bins: {time_bins}')
+            print(f'Input value for rays per frequency: {rpf}')
+            print(f'Input value for source sound power in W: {sound_power_W}')
+            print(f'Rendered frequencies: {frequencies}')
+            print(f'Input values for absorption: {absorption_map}')
+            print(f'Use dynamic range limiter: {dynamic_range_db}')
+
         
         frequency_range = (float(np.min(frequencies)), float(np.max(frequencies)))
         f_center, f_lower, f_upper = pf.constants.fractional_octave_frequencies_exact(1, frequency_range)
@@ -107,12 +114,10 @@ class misukaMethod(SimulationMethod):
             for i in range(n_receivers)
         ]
 
+        if log_data: print(f'Source coordinates: {source_coords}\n Reciever coordinates: {receiver_coords}')
+
         # updating percentage of progress
         set_progress_and_save(25, result_container, json_file_path)
-
-        # ----------------------------------------------------------------
-        # --- initializing scene with geometry & integrator ---
-        # ----------------------------------------------------------------
 
         # set up the integrator
         integrator_acoustic = mi.load_dict(
@@ -124,7 +129,11 @@ class misukaMethod(SimulationMethod):
             }
         )
 
-        print(f'Simulationsdauer: {max_time}')
+        if log_data: print(f'Integrator: {integrator_acoustic}')
+
+        # ----------------------------------------------------------------
+        # --------------------- initializing scene ---------------------
+        # ----------------------------------------------------------------
        
         # define scene as dictionary
         scene_dict = {
@@ -173,7 +182,10 @@ class misukaMethod(SimulationMethod):
                 "bsdf": {"type": "ref", "id": f"bsdf_{i}"},
             }
 
-        # render for every source to every reciever
+        # ----------------------------------------------------------------
+        # -------- rendering for every source to every reciever ----------
+        # ----------------------------------------------------------------
+        
         for i_src, source_coord in enumerate(source_coords):
             for i_rec, receiver_coord in enumerate(receiver_coords):
 
@@ -204,14 +216,14 @@ class misukaMethod(SimulationMethod):
                         'type': 'area',
                         'radiance': {
                         'type': 'uniform',
-                        'value': source_intensity,
+                        'value': sound_power_W,
                         }
                     }
                 }
 
                 scene = mi.load_dict(scene_dict)
 
-                #print(f'Meine Szene: {scene}')
+                if log_data: print(f'Loaded Scene for reciever at {receiver_coord} and source at {source_coord}: {scene}')
 
                 etc = mi.render(scene, sensor=microphone, integrator=integrator_acoustic,spp=rpf)
                 etc_signal = pf.Signal(etc.numpy().T, sampling_rate=time_bins / max_time, domain='time')
@@ -220,35 +232,11 @@ class misukaMethod(SimulationMethod):
                 edc_normalized = pf.dsp.normalize(edc)
                 edc_normalized_db = 10*np.log10(edc_normalized.time/1e-12)
                 edc_normalized_db = np.squeeze(edc_normalized_db, axis=0)
-                edc_normalized_db = finite_array(edc_normalized_db, nan=0.0, neginf=-400.0, posinf=0.0)
-                # limit = np.max(edc_normalized_db) - dynamic_range_db
-                # edc_normalized_db[edc_normalized_db<limit] = limit
-
-                print("max_time:", max_time)
-                print("time_bins:", time_bins)
-                print("etc_signal.times[-1]:", etc_signal.times[-1])
-                print("etc_signal.n_samples:", etc_signal.n_samples)
-                print("etc_signal.sampling_rate:", etc_signal.sampling_rate)
-
-                print(etc)
-                print(etc.shape)
-
-                # print(etc_signal.cshape)
-                # print(etc_signal.n_samples)
-                # print(type(edc))
-                # print(edc.cshape)
-                # print(edc.time.shape)
-                # print(edc.time[0].shape)
+                edc_normalized_db = finite_array(edc_normalized_db, nan=0.0, neginf=-600.0, posinf=0.0)
                 
-
-                # print("etc:", etc.shape)
-                # print("etc_signal.time:", etc_signal.time.shape)
-                # print("edc.time:", edc.time.shape)
-                # print("edc_normalized.time:", edc_normalized.time.shape)
-                # print("len(frequencies):", len(frequencies))
-                # print(etc.numpy().shape)
-                # print(len(frequencies))
-                # print(len(frequencies_misuka))
+                if dynamic_range_db:
+                    limit = np.max(edc_normalized_db) - 100
+                    edc_normalized_db[edc_normalized_db<limit] = limit
 
                 result_container["results"][0]["responses"][i_rec]["receiverResults"] = [
                     {
@@ -286,13 +274,6 @@ class misukaMethod(SimulationMethod):
                 edt = np.squeeze(pr.parameters.reverberation_time_linear_regression(edc, 'EDT'))
                 edt = finite_array(edt, nan=0.0, neginf=0.0, posinf=0.0)
                 result_container["results"][0]["responses"][i_rec]["parameters"]['edt'] = edt.tolist()
-
-                # print(t20.shape)
-                # print(t30.shape)
-                # print(c80.shape)
-                # print(d50.shape)
-                # print(ts.shape)
-                # print(edt.shape)
 
                 pressure_csv_path = str(json_file_path).replace(".json", "_pressure.csv")
                 pressure_data = []
@@ -356,7 +337,6 @@ def create_frequency_spectrum(frequencies: list, values) -> list:
     
     return list(zip(frequencies, vals[:len(frequencies)]))
 
-
 def export_physical_surface_to_ply(surface_name: str, entity_tags, ply_path: str | Path) -> Path:
     """Export only the triangular mesh faces of one physical surface to PLY."""
     ply_path = Path(ply_path)
@@ -408,7 +388,6 @@ def export_physical_surface_to_ply(surface_name: str, entity_tags, ply_path: str
         cells=[("triangle", compact_faces)],
     ).write(str(ply_path))
     return ply_path
-
 
 # copy pasted from pyrato
 def center_time(energy_decay_curve):

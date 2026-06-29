@@ -15,7 +15,7 @@
         "sampling_rate": 10000,
         "sound_power_W": 1,
         "speed_of_sound": 343,
-        "dynamic_range_db": 100,
+        "dynamic_range_db": "no",
         "scattering_125": 0.1,
         "scattering_250": 0.1,
         "scattering_500": 0.1,

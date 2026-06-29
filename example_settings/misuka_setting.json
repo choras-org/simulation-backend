@@ -56,15 +56,16 @@
             "endAdornment": "m/s"
         },
         {
-            "name": "Dynamic Range",
+            "name": "Limit Dynamic Range to 100dB",
             "id": "dynamic_range_db",
-            "display": "text",
-            "type": "integer",
-            "min": 5,
-            "max": 200,
-            "step": 10,
-            "default": 100,
-            "endAdornment": "dB"
+            "type": "string",
+            "display": "radio",
+            "options": 
+            {
+                "yes": "yes", 
+                "no": "no"
+            },
+            "default": "no"
         },
         {
             "name": "Scattering for 125 Hz",
