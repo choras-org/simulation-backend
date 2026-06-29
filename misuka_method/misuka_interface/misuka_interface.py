@@ -225,6 +225,7 @@ class misukaMethod(SimulationMethod):
 
                 if log_data: print(f'Loaded Scene for reciever at {receiver_coord} and source at {source_coord}: {scene}')
 
+                #TODO: use sound_power_W for scaling the etc
                 etc = mi.render(scene, sensor=microphone, integrator=integrator_acoustic,spp=rpf)
                 etc_signal = pf.Signal(etc.numpy().T, sampling_rate=time_bins / max_time, domain='time')
                 etc_signal.time /= np.max(np.abs(etc_signal.time))
