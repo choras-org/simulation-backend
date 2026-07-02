@@ -276,21 +276,6 @@ class misukaMethod(SimulationMethod):
                 edt = finite_array(edt, nan=0.0, neginf=0.0, posinf=0.0)
                 result_container["results"][0]["responses"][i_rec]["parameters"]['edt'] = edt.tolist()
 
-                pressure_csv_path = str(json_file_path).replace(".json", "_pressure.csv")
-                pressure_data = []
-
-                for time_idx, time_value in enumerate(etc_signal.times.tolist()):
-                    row = {"t": time_value}
-                    for band_idx, frequency in enumerate(frequencies):
-                        row[f"{int(frequency)}Hz"] = float(
-                            etc.numpy()[time_idx, band_idx, 0]
-                        )
-                    pressure_data.append(row)
-
-                df = pd.DataFrame(pressure_data)
-                df.to_csv(pressure_csv_path, index=False)
-
-                
             # update progress for each source in even steps to ~90%
             set_progress_and_save(35 + int(55/(n_receivers+1) * (i_src + 1)), result_container, json_file_path)
         
