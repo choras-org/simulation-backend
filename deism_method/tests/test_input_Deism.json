@@ -28,8 +28,7 @@
         "mixEarlyOrder": 2,
         "numParaImages": 1000,
         "ifReceiverNormalize": 1,
-        "QFlowStrength": 0.001,
-        "SilentMode": 0
+        "QFlowStrength": 0.001
     },
     "results": [
         {

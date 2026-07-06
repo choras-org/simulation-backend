@@ -197,16 +197,6 @@
             "max": 1,
             "default": 0.001,
             "step": 0.0001
-        },
-        {
-            "name": "Silent mode",
-            "id": "SilentMode",
-            "type": "integer",
-            "display": "text",
-            "min": 0,
-            "max": 1,
-            "default": 0,
-            "step": 1
         }
     ]
 }

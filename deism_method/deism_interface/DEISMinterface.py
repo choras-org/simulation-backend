@@ -42,7 +42,6 @@ DEISM_JSON_KEY_MAP = {
     "numParaImages": ("numParaImages", int),
     "ifReceiverNormalize": ("ifReceiverNormalize", int),
     "QFlowStrength": ("qFlowStrength", float),
-    "SilentMode": ("silentMode", int),
     # Backward-compatible aliases matching the raw DEISM parameter names.
     "sampleRate": ("sampleRate", int),
     "maxReflOrder": ("maxReflOrder", int),
@@ -55,7 +54,6 @@ DEISM_JSON_KEY_MAP = {
     "ifRemoveDirectPath": ("ifRemoveDirectPath", int),
     "DEISM_method": ("DEISM_method", str),
     "qFlowStrength": ("qFlowStrength", float),
-    "silentMode": ("silentMode", int),
 }
 
 def create_vgroups_names(file_path):
@@ -160,11 +158,16 @@ def apply_choras_runtime_overrides(deism, coord_source, coord_rec):
 
 
 def create_deism_instance(mode, room_type):
-    """Create a DEISM instance without leaking the container's own argv."""
+    """Create a DEISM instance without leaking the container's own argv.
+
+    CHORAS reports progress via the result JSON, not DEISM console output, so
+    DEISM runs silently. Wrapper-level logs (start/done/errors/conflicts) are
+    still emitted for container debugging.
+    """
     original_argv = sys.argv[:]
     try:
         sys.argv = [original_argv[0]] if original_argv else ["deism"]
-        return DEISM(mode, room_type)
+        return DEISM(mode, room_type, silent=True)
     finally:
         sys.argv = original_argv
 
