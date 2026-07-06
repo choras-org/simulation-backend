@@ -28,5 +28,15 @@
         "entryFile": "__main__.py",
         "repositoryURL": "https://github.com/LCAV/pyroomacoustics",
         "documentationURL": "https://pyroomacoustics.readthedocs.io"
+    },
+    {
+        "simulationType": "DEISM",
+        "containerImage": "deism_image:latest",
+        "envVars": {},
+        "label": "Diffraction Enhanced Image Source Method",
+        "settings": "deism_setting.json",
+        "entryFile": "DEISMinterface.py",
+        "repositoryURL": "https://github.com/audiolabs/DEISM",
+        "documentationURL": "https://github.com/audiolabs/DEISM"
     }
 ]
