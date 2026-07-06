@@ -44,7 +44,10 @@ tests = [
     "pytest-cov",
     "watchdog",
     "ruff",
-    "coverage",
+    # deism==2.2.1.13 pulls numba 0.66.0, whose coverage_support needs
+    # coverage.types.Tracer (added in coverage 7.6.1). Older coverage breaks
+    # `import deism` at test collection.
+    "coverage>=7.6.1",
 ]
 
 docs = [

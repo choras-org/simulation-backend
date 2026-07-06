@@ -58,12 +58,6 @@ DEISM_JSON_KEY_MAP = {
     "silentMode": ("silentMode", int),
 }
 
-# DEISM expects walls in the order [x1, x2, y1, y2, z1, z2]; these are the
-# Gmsh physical-surface tags that CHORAS geometry export assigns to that
-# same order.
-DEISM_WALL_TAG_ORDER = [2, 5, 4, 6, 1, 3]
-
-
 def create_vgroups_names(file_path):
     """List the Gmsh physical-group tags and their material names.
 
@@ -211,19 +205,26 @@ def use_real_stdio():
             fallback_stream.close()
 
 
-def get_deism_surface_order(vgroups_names):
-    """Map Gmsh physical surfaces onto DEISM's expected wall order."""
-    surface_names_by_tag = {
-        int(tag): name for dim, tag, name in vgroups_names if int(dim) == 2
-    }
-    missing_tags = [
-        tag for tag in DEISM_WALL_TAG_ORDER if tag not in surface_names_by_tag
-    ]
-    if missing_tags:
-        raise KeyError(
-            f"Missing physical surface tags required by DEISM: {missing_tags}"
+def get_deism_surface_order(vgroups_names, wall_centers_loaded):
+    """Return the 6 wall surface names in a deterministic order.
+
+    CHORAS rooms take DEISM's convex/ARG path, which re-matches each wall to
+    its absorption value by centroid proximity (see ``deism.core_deism_arg``).
+    The specific order is therefore irrelevant to the physics as long as each
+    surface's absorption stays paired with its own centroid -- which the caller
+    guarantees by keying both off the same surface name. We sort by centroid so
+    the result no longer depends on Gmsh physical-tag declaration order.
+    """
+    surface_names = [name for dim, tag, name in vgroups_names if int(dim) == 2]
+    if len(surface_names) != 6:
+        raise ValueError(
+            f"DEISM requires exactly 6 wall surfaces, found {len(surface_names)}"
         )
-    return [surface_names_by_tag[tag] for tag in DEISM_WALL_TAG_ORDER]
+    centers = {
+        name: np.asarray(wall_centers_loaded[name], dtype=float)
+        for name in surface_names
+    }
+    return sorted(surface_names, key=lambda name: tuple(centers[name]))
 
 
 def update_result_percentage(result_container, json_file_path, percentage):
@@ -374,7 +375,7 @@ class DeismMethod(SimulationMethod):
             room_volumn = result_container["geometry"][0]["room_volumn"]
             room_areas_loaded = result_container["geometry"][0]["room_areas"]
 
-            wall_order = get_deism_surface_order(vgroups_names)
+            wall_order = get_deism_surface_order(vgroups_names, wall_centers_loaded)
             absorption_coefficients = np.zeros((6, len(freq_bands)))
             wall_centers = np.zeros((6, 3))
             room_areas = np.zeros((6, 1))
