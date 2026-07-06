@@ -1,9 +1,10 @@
+import io
 import json
 import logging
 import os
 import sys
 import traceback
-from contextlib import contextmanager
+from contextlib import contextmanager, redirect_stdout
 from pathlib import Path
 
 import gmsh
@@ -151,6 +152,18 @@ def apply_choras_runtime_overrides(deism, coord_source, coord_rec):
     deism.params["posSource"] = np.array(coord_source, dtype=float)
     deism.params["posReceiver"] = np.array(coord_rec, dtype=float)
 
+    # CHORAS supplies the room geometry (via `update_room`) and the source/
+    # receiver facing angles (`orientSource`/`orientReceiver`) already expressed
+    # in the room's own coordinate frame. DEISM's bundled example config
+    # (`configSingleParam_ARG_RIR.yml`) ships `ifRotateRoom: 1` with a
+    # `[90, 90, 90]` example rotation; since neither the interface nor the
+    # frontend overrides it, every CHORAS run would otherwise inherit that
+    # example rotation and apply it on top of the CHORAS orientations, silently
+    # rotating any directive source/receiver by 90/90/90 degrees. Disable it so
+    # only the CHORAS-provided orientations are used.
+    deism.params["ifRotateRoom"] = 0
+    deism.params["roomRotation"] = np.zeros(3, dtype=float)
+
 
 def create_deism_instance(mode, room_type):
     """Create a DEISM instance without leaking the container's own argv."""
@@ -221,6 +234,57 @@ def update_result_percentage(result_container, json_file_path, percentage):
     result_container["results"][0]["percentage"] = int(percentage)
     with open(json_file_path, "w") as json_file:
         json.dump(result_container, json_file, indent=4)
+
+
+def run_parameter_conflict_checks(deism, result_container, json_file_path):
+    """Run DEISM's built-in parameter conflict checks and surface the outcome.
+
+    DEISM validates its parameters via ``ConflictChecks.check_all_conflicts``
+    (which enforces some rules and raises ``ValueError`` on hard conflicts, e.g.
+    conflicting wall materials) and ``detect_conflicts`` (print-only
+    diagnostics). Both normally write to stdout, where their warnings are lost,
+    and a raised error would kill the container with no explanation reaching
+    CHORAS. Here we capture both, persist the warnings/error into the result
+    JSON (which the backend reads back from the shared uploads volume), and
+    re-emit them to the container log.
+
+    On a hard conflict the parameters are invalid, so we stop before the
+    expensive solve and raise -- but only after the message has been persisted
+    for CHORAS to display.
+    """
+    buffer = io.StringIO()
+    error_message = None
+    try:
+        with redirect_stdout(buffer):
+            ConflictChecks.check_all_conflicts(deism.params)
+            detect_conflicts(deism.params)
+    except ValueError as exc:
+        error_message = str(exc)
+
+    captured = buffer.getvalue()
+    # Re-emit captured diagnostics so they still appear in the container log.
+    if captured.strip():
+        print(captured, end="", flush=True)
+
+    # ``check_all_conflicts`` and ``detect_conflicts`` overlap, so the same
+    # warning can appear twice; dedupe while preserving first-seen order.
+    warnings = list(
+        dict.fromkeys(
+            line.strip() for line in captured.splitlines() if "[Warning]" in line
+        )
+    )
+
+    if warnings or error_message:
+        diagnostics = {"warnings": warnings}
+        if error_message:
+            diagnostics["error"] = error_message
+            print(f"[ParameterConflict] {error_message}", flush=True)
+        result_container["parameterDiagnostics"] = diagnostics
+        with open(json_file_path, "w") as json_file:
+            json.dump(result_container, json_file, indent=4)
+
+    if error_message:
+        raise ValueError(error_message)
 
 
 def check_should_cancel(json_file_path):
@@ -327,8 +391,7 @@ class DeismMethod(SimulationMethod):
             update_result_percentage(result_container, json_file_path, 35)
 
             deism.update_room(vertices, wall_centers, room_volumn, room_areas)
-            ConflictChecks.check_all_conflicts(deism.params)
-            detect_conflicts(deism.params)
+            run_parameter_conflict_checks(deism, result_container, json_file_path)
             update_result_percentage(result_container, json_file_path, 45)
 
             deism.update_wall_materials(
