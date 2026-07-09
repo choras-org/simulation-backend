@@ -12,7 +12,7 @@
             "default": 1048576
         },
         {
-            "name": "Maximum Time to Simulate",
+            "name": "Maximum Response Length",
             "id": "max_time",
             "type": "float",
             "display": "text",
