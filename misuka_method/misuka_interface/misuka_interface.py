@@ -73,16 +73,15 @@ class misukaMethod(SimulationMethod):
         dynamic_range_db = simulation_settings["dynamic_range_db"] == "yes"
         log_data = simulation_settings["log_data"] == "yes"
         
-        if log_data: 
-            print(f'Using variant: {mi.variant()}')
-            print(f'Input value for speed of sound: {speed_of_sound}')
-            print(f'Input value for maximum simulation time: {max_time}')
-            print(f'Input value for time_bins: {time_bins}')
-            print(f'Input value for rays per frequency: {rpf}')
-            print(f'Input value for source sound power in W: {sound_power_W}')
-            print(f'Rendered frequencies: {frequencies}')
-            print(f'Input values for absorption: {absorption_map}')
-            print(f'Use dynamic range limiter: {dynamic_range_db}')
+        logger.info(f'Using variant: {mi.variant()}')
+        logger.info(f'Input value for speed of sound: {speed_of_sound}')
+        logger.info(f'Input value for maximum simulation time: {max_time}')
+        logger.info(f'Input value for time_bins: {time_bins}')
+        logger.info(f'Input value for rays per frequency: {rpf}')
+        logger.info(f'Input value for source sound power in W: {sound_power_W}')
+        logger.info(f'Rendered frequencies: {frequencies}')
+        logger.info(f'Input values for absorption: {absorption_map}')
+        logger.info(f'Use dynamic range limiter: {dynamic_range_db}')
 
         
         frequency_range = (float(np.min(frequencies)), float(np.max(frequencies)))
