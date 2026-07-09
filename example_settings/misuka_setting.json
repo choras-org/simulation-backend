@@ -23,7 +23,7 @@
             "endAdornment": "s"
         },
         {
-            "name": "Time Bins",
+            "name": "Histogram sampling rate",
             "id": "sampling_rate",
             "type": "integer",
             "display": "text",
