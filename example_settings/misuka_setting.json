@@ -2,7 +2,7 @@
     "type": "simulationSettings",
     "options": [
         {
-            "name": "Rays per Frequencies",
+            "name": "Rays per Frequency Band",
             "id": "rays_per_frequency",
             "type": "integer", 
             "display": "text",
