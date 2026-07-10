@@ -3,11 +3,11 @@
     "method": "Pyroomacoustics",
     "notes": "Example notes",
     "issues": {
-        "non_planar_face": {
-            "compatibility": "compatible"
-        },
-        "small_face": {
+        "boundary_edge": {
             "compatibility": "warning"
+        },
+        "possible_hole": {
+            "compatibility": "incompatible"
         }
     }
 }

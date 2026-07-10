@@ -47,6 +47,11 @@
             "description": "A face whose area is below the recommended size threshold.",
             "compatibility": "warning"
         },
+        "collinear_face": {
+            "label": "Collinear face",
+            "description": "A face whose vertices are collinear or nearly collinear (collapsed to a line).",
+            "compatibility": "warning"
+        },
         "overlapping_face": {
             "label": "Overlapping faces",
             "description": "Two or more faces occupy the same space, causing potential simulation issues.",
