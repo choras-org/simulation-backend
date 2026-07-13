@@ -454,7 +454,16 @@ def _write_results_json(
                     "x": receiver_pos[0],
                     "y": receiver_pos[1],
                     "z": receiver_pos[2],
-                    "receiverResults": [],
+                    "parameters": {
+                        "edt": [],
+                        "t20": [],
+                        "t30": [],
+                        "c80": [],
+                        "d50": [],
+                        "ts": [],
+                        "spl_t0_freq": [],
+                    },
+                    "receiverResults": ir_data,
                     "receiverResultsUncorrected": ir_data,
                 }
             )
