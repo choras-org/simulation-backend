@@ -6,6 +6,7 @@
         "label": "Discontinuous Galerkin method",
         "settings":"dg_setting.json",
         "geometryCompatibility":"dg_method/geometry_compatibility.json",
+        "methodValidation":"dg_method/dg_interface/validation.py",
         "entryFile":"DGinterface.py",
         "repositoryURL":"https://github.com/Building-acoustics-TU-Eindhoven/edg-acoustics/",
         "documentationURL":"https://dg-roomacoustics.readthedocs.io/en/latest/"
@@ -17,6 +18,7 @@
         "label": "Diffusion Equation method",
         "settings":"de_setting.json",
         "geometryCompatibility":"de_method/geometry_compatibility.json",
+        "methodValidation":"de_method/de_interface/validation.py",
         "entryFile":"DEinterface.py",
         "repositoryURL":"https://github.com/Building-acoustics-TU-Eindhoven/acousticDE/",
         "documentationURL":"https://building-acoustics-tu-eindhoven.github.io/acousticDE/index.html"
