@@ -11,7 +11,12 @@ import gmsh
 import matplotlib.pyplot as plt
 import numpy as np
 from deism.core_deism import DEISM
-from deism.data_loader import ConflictChecks, compute_rest_params, detect_conflicts
+from deism.data_loader import (
+    ConflictChecks,
+    compute_rest_params,
+    detect_conflicts,
+    update_n1_n2_n3,
+)
 from deism.room_check import get_room_geometry, sync_room_geometry
 
 from .definition import SimulationMethod
@@ -405,9 +410,31 @@ class DeismMethod(SimulationMethod):
             update_result_percentage(result_container, json_file_path, 45)
 
             deism.update_wall_materials(
-                absorption_coefficients, freq_bands, "absorpCoefficient"
+                absorption_coefficients, freq_bands, "absorption"
             )
             update_result_percentage(result_container, json_file_path, 55)
+
+            # CHORAS fast mode: cap the transform horizon (and, for
+            # shoebox rooms, the image set) at the requested RIR length.
+            # DEISM's estimated max bandwise T60 otherwise sets the
+            # frequency-grid density and image extent; everything beyond
+            # RIRLength would be computed and then discarded by the final
+            # truncation in get_results. Must run after
+            # update_wall_materials (which recomputes the T60 estimate)
+            # and before update_freqs (which builds the grid from it).
+            t60_estimate = float(deism.params["reverberationTime"])
+            rir_length = float(deism.params["RIRLength"])
+            if t60_estimate > rir_length:
+                logger.warning(
+                    "Estimated T60 %.2f s exceeds RIRLength %.2f s; "
+                    "capping the simulation horizon at RIRLength "
+                    "(reflections arriving later are not computed).",
+                    t60_estimate,
+                    rir_length,
+                )
+                deism.params["reverberationTime"] = rir_length
+                if deism.roomtype == "shoebox":
+                    deism.params = update_n1_n2_n3(deism.params)
 
             deism.update_freqs()
             update_result_percentage(result_container, json_file_path, 65)

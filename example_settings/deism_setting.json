@@ -10,7 +10,8 @@
             "max": 500,
             "default": 343,
             "step": 1,
-            "endAdornment": "m/s"
+            "endAdornment": "m/s",
+            "description": "Propagation speed of sound in air. 343 m/s corresponds to roughly 20 °C."
         },
         {
             "name": "Air density",
@@ -21,7 +22,8 @@
             "max": 5,
             "default": 1.2,
             "step": 0.1,
-            "endAdornment": "kg/m^3"
+            "endAdornment": "kg/m^3",
+            "description": "Density of air."
         },
         {
             "name": "RIR length",
@@ -32,7 +34,8 @@
             "max": 20,
             "default": 1,
             "step": 0.1,
-            "endAdornment": "s"
+            "endAdornment": "s",
+            "description": "Length of the output impulse response. Choose a length that covers the expected decay (roughly the room's T60) if you need the full reverberant tail."
         },
         {
             "name": "Sampling rate",
@@ -43,7 +46,8 @@
             "max": 96000,
             "default": 44100,
             "step": 1,
-            "endAdornment": "Hz"
+            "endAdornment": "Hz",
+            "description": "Sampling rate of the output impulse response. Higher rates increase computation time proportionally."
         },
         {
             "name": "Max reflection order",
@@ -53,7 +57,8 @@
             "min": 0,
             "max": 100,
             "default": 10,
-            "step": 1
+            "step": 1,
+            "description": "Highest image-source reflection order to include. The number of images, and hence the computation time, grows rapidly with this value. Together with the RIR length it bounds how much of the reverberant tail is modeled."
         },
         {
             "name": "Source type",
@@ -64,7 +69,8 @@
             {
                 "Monopole": "monopole"
             },
-            "default": "monopole"
+            "default": "monopole",
+            "description": "Directivity pattern of the source. Monopole radiates equally in all directions."
         },
         {
             "name": "Receiver type",
@@ -75,7 +81,8 @@
             {
                 "Monopole": "monopole"
             },
-            "default": "monopole"
+            "default": "monopole",
+            "description": "Directivity pattern of the receiver. Monopole is equally sensitive in all directions."
         },
         {
             "name": "Source SH order",
@@ -85,7 +92,8 @@
             "min": 0,
             "max": 10,
             "default": 0,
-            "step": 1
+            "step": 1,
+            "description": "Spherical-harmonic order used to represent the source directivity. 0 is omnidirectional; higher orders capture more directive patterns but increase computation time."
         },
         {
             "name": "Receiver SH order",
@@ -95,7 +103,8 @@
             "min": 0,
             "max": 10,
             "default": 0,
-            "step": 1
+            "step": 1,
+            "description": "Spherical-harmonic order used to represent the receiver directivity. 0 is omnidirectional; higher orders capture more directive patterns but increase computation time."
         },
         {
             "name": "Source radius",
@@ -106,7 +115,8 @@
             "max": 1,
             "default": 0.4,
             "step": 0.01,
-            "endAdornment": "m"
+            "endAdornment": "m",
+            "description": "Radius of the transparent sphere around the source on which its directivity is defined. Only relevant for measured or simulated directive sources (SH order above 0)."
         },
         {
             "name": "Receiver radius",
@@ -117,7 +127,8 @@
             "max": 1,
             "default": 0.5,
             "step": 0.01,
-            "endAdornment": "m"
+            "endAdornment": "m",
+            "description": "Radius of the transparent sphere around the receiver on which its directivity is defined. Only relevant for measured or simulated directive receivers (SH order above 0)."
         },
         {
             "name": "Source orientation",
@@ -125,7 +136,8 @@
             "type": "string",
             "display": "text",
             "default": "0, 0, 0",
-            "endAdornment": "deg"
+            "endAdornment": "deg",
+            "description": "Rotation of the source directivity pattern as three angles in degrees in ZXZ convention. Irrelevant for monopole sources."
         },
         {
             "name": "Receiver orientation",
@@ -133,7 +145,8 @@
             "type": "string",
             "display": "text",
             "default": "180, 0, 0",
-            "endAdornment": "deg"
+            "endAdornment": "deg",
+            "description": "Rotation of the receiver directivity pattern as three angles in degrees in ZXZ convention. Irrelevant for monopole receivers."
         },
         {
             "name": "DEISM mode",
@@ -146,7 +159,8 @@
                 "LC": "LC",
                 "MIX": "MIX"
             },
-            "default": "MIX"
+            "default": "MIX",
+            "description": "Solver variant. ORG is the most accurate but slowest; LC is a faster low-complexity approximation; MIX uses ORG for early reflections and LC for the rest (recommended)."
         },
         {
             "name": "Remove direct path",
@@ -156,7 +170,8 @@
             "min": 0,
             "max": 1,
             "default": 0,
-            "step": 1
+            "step": 1,
+            "description": "Set to 1 to exclude the direct sound from the impulse response, keeping only the reflections."
         },
         {
             "name": "Early mix order",
@@ -166,7 +181,8 @@
             "min": 0,
             "max": 20,
             "default": 2,
-            "step": 1
+            "step": 1,
+            "description": "In MIX mode, reflections up to this order are computed with the accurate ORG formulation; higher orders use the faster LC approximation."
         },
         {
             "name": "Parallel images",
@@ -176,7 +192,8 @@
             "min": 1,
             "max": 50000,
             "default": 1000,
-            "step": 1
+            "step": 1,
+            "description": "Number of image sources processed per parallel batch. Larger values can be faster but use more memory."
         },
         {
             "name": "Normalize receiver",
@@ -185,8 +202,9 @@
             "display": "text",
             "min": 0,
             "max": 1,
-            "default": 1,
-            "step": 1
+            "default": 0,
+            "step": 1,
+            "description": "Set to 1 to normalize the result by the monopole source strength (flow strength), yielding a transfer function independent of the source amplitude."
         },
         {
             "name": "Flow strength",
@@ -196,7 +214,8 @@
             "min": 0,
             "max": 1,
             "default": 0.001,
-            "step": 0.0001
+            "step": 0.0001,
+            "description": "Volume-flow strength of the point source used in receiver normalization. Irrelevant when receiver normalization is enabled."
         }
     ]
 }
