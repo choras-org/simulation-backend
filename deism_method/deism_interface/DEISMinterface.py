@@ -355,7 +355,11 @@ class DeismMethod(SimulationMethod):
             # Populate result_container["geometry"] (vertices, wall
             # centers, areas, volume) from the mesh file.
             sync_room_geometry(json_file_path, geo_path)
-            _volume, room = get_room_geometry(geo_file=geo_path)
+            # `get_room_geometry` is still called for its validation: since
+            # deism 2.2.1.14 it raises for a room that is neither shoebox nor
+            # convex. Its returned room type is deliberately discarded -- see
+            # the `"convex"` pin at `create_deism_instance` below.
+            get_room_geometry(geo_file=geo_path)
 
             with open(json_file_path, "r") as json_file:
                 result_container = json.load(json_file)
@@ -385,7 +389,7 @@ class DeismMethod(SimulationMethod):
             # absorption value by centroid proximity, so any count M >= 4 works.
             vertices = np.array(result_container["geometry"][0]["vertices"])
             wall_centers_loaded = result_container["geometry"][0]["wall_centers"]
-            room_volumn = result_container["geometry"][0]["room_volumn"]
+            room_volume = result_container["geometry"][0]["room_volume"]
             room_areas_loaded = result_container["geometry"][0]["room_areas"]
 
             wall_order = get_deism_surface_order(vgroups_names, wall_centers_loaded)
@@ -399,13 +403,23 @@ class DeismMethod(SimulationMethod):
                 room_areas[index, :] = parse_value(room_areas_loaded[wall])
             update_result_percentage(result_container, json_file_path, 25)
 
+            # Always take DEISM's convex/ARG path. Up to deism 2.2.1.13
+            # `collect_room_geometry_data` reported every convex room as
+            # "convex", boxes included, so this is the path CHORAS has always
+            # run on. Since 2.2.1.14 a rectangular room is reported as
+            # "shoebox" instead, whose `update_room` wants a size-3
+            # `roomDimensions` rather than the `(N, 3)` vertices/wallCenters
+            # this wrapper supplies -- and whose fixed [x1,x2,y1,y2,z1,z2] wall
+            # order does not match CHORAS's per-surface (UUID-keyed) materials.
+            # Pinning "convex" keeps both working; supporting the faster
+            # shoebox path is tracked separately.
             with use_real_stdio():
-                deism = create_deism_instance("RIR", room)
+                deism = create_deism_instance("RIR", "convex")
             apply_simulation_settings_to_deism(deism, simulation_settings)
             apply_choras_runtime_overrides(deism, coord_source, coord_rec)
             update_result_percentage(result_container, json_file_path, 35)
 
-            deism.update_room(vertices, wall_centers, room_volumn, room_areas)
+            deism.update_room(vertices, wall_centers, room_volume, room_areas)
             run_parameter_conflict_checks(deism, result_container, json_file_path)
             update_result_percentage(result_container, json_file_path, 45)
 

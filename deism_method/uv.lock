@@ -161,7 +161,7 @@ name = "cffi"
 version = "2.0.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pycparser", marker = "implementation_name != 'PyPy'" },
+    { name = "pycparser", marker = "(implementation_name != 'PyPy' and platform_machine != 'ARM64') or (implementation_name != 'PyPy' and sys_platform != 'win32')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/eb/56/b1ba7935a17738ae8453301356628e8147c79dbb825bcbc73dc7401f9846/cffi-2.0.0.tar.gz", hash = "sha256:44d1b5909021139fe36001ae048dbdde8214afa20200eda0f64c068cac5d5529", size = 523588, upload-time = "2025-09-08T23:24:04.541Z" }
 wheels = [
@@ -507,7 +507,7 @@ name = "cryptography"
 version = "49.0.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "cffi", marker = "platform_python_implementation != 'PyPy'" },
+    { name = "cffi", marker = "(platform_machine != 'ARM64' and platform_python_implementation != 'PyPy') or (platform_python_implementation != 'PyPy' and sys_platform != 'win32')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/1f/99/d1c90d6041656cc6ee229dc99cd67fd0cd5aec3c5f7d72fffc27cc750054/cryptography-49.0.0.tar.gz", hash = "sha256:f89660a348f4f78a92366240a61404e337586ef7f5909a2fef59ca88ef505493", size = 854345, upload-time = "2026-06-12T20:02:30.512Z" }
 wheels = [
@@ -589,7 +589,7 @@ wheels = [
 
 [[package]]
 name = "deism"
-version = "2.2.1.13"
+version = "2.2.1.14"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "cython" },
@@ -604,11 +604,11 @@ dependencies = [
     { name = "sound-field-analysis" },
     { name = "sympy" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/33/b4/a88380ca23c1f98a9fa503bf8a35509801552defe8d5cb0fcadf665d90ae/deism-2.2.1.13.tar.gz", hash = "sha256:6af4438d4c6ff0c43200a44d2e75c95f41361099e746cd50b2eb9a74eae78392", size = 2711639, upload-time = "2026-03-30T17:37:34.899Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/d5/7a/c09b5b32b3de580812d2498ef76847b7fef6b1ba510dff31b82b30fcdefd/deism-2.2.1.14.tar.gz", hash = "sha256:1ff549470dd8cad0a9c175c4ef490d5d9114454fd78152b2f4438bf5e971d993", size = 10759835, upload-time = "2026-07-19T14:27:17.455Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/d4/c8/b90ba1577b21f37028c4d0d99d0aa34af4a1c2df74c591f0ba0a03a71167/deism-2.2.1.13-cp311-cp311-macosx_15_0_universal2.whl", hash = "sha256:ab32e5423731f93704db7331929c6cf4c610e795698a19f0f8192bac3b0755fe", size = 3775436, upload-time = "2026-03-30T17:37:32.03Z" },
-    { url = "https://files.pythonhosted.org/packages/c8/6d/6aa7a7c89f94604dafece5e99f828f05d0bc4c5493c565d0c773d36e08b6/deism-2.2.1.13-cp311-cp311-manylinux_2_39_x86_64.whl", hash = "sha256:544f029323bd14d0ea7ea7727ca41349d5fd5a37769c1838fb5a76875925ecdc", size = 17959860, upload-time = "2026-03-30T17:39:13.798Z" },
-    { url = "https://files.pythonhosted.org/packages/15/c3/9671363eba2ee267de441e16d2183c3e9fa7988702d76d45e73059fc44f6/deism-2.2.1.13-cp311-cp311-win_amd64.whl", hash = "sha256:26e77a0dc9594a9f34bf83121aabf174eb24b60c386af31797da2a0df370dcbd", size = 3732498, upload-time = "2026-03-30T17:41:20.548Z" },
+    { url = "https://files.pythonhosted.org/packages/7f/cd/998839e5f7190e2863b8426e0c3a8f4d6e2d08b5448aba33f7c7eb89a5ec/deism-2.2.1.14-cp311-cp311-macosx_26_0_universal2.whl", hash = "sha256:6346087c3e5f831251dba57d90aac5f18d5b2bc73840a94a163c5b855c7cafc6", size = 3791332, upload-time = "2026-07-19T14:27:14.455Z" },
+    { url = "https://files.pythonhosted.org/packages/14/25/d686b0bec35ad68c36d0741413bdb039ff63d8567015356176fe49b823d3/deism-2.2.1.14-cp311-cp311-manylinux_2_39_x86_64.whl", hash = "sha256:6847e5c2c43bf0b6d6647d6c7e647804fd05b041a55077c1b0f676a75f01cd66", size = 17956656, upload-time = "2026-07-19T14:28:46.307Z" },
+    { url = "https://files.pythonhosted.org/packages/c7/f9/ef0d1e5baa6e014c7017df1e1fea03cce38d6006b15859b6e68a0266e614/deism-2.2.1.14-cp311-cp311-win_amd64.whl", hash = "sha256:beb8690cf34ad0f7331251892bdd89abf4c028ae8d0cd3df4254c3c1577eee03", size = 3743287, upload-time = "2026-07-19T14:29:57.324Z" },
 ]
 
 [[package]]
@@ -675,7 +675,7 @@ requires-dist = [
     { name = "build", marker = "extra == 'deploy'" },
     { name = "bump-my-version", marker = "extra == 'deploy'" },
     { name = "coverage", marker = "extra == 'tests'", specifier = ">=7.6.1" },
-    { name = "deism", specifier = "==2.2.1.13" },
+    { name = "deism", specifier = "==2.2.1.14" },
     { name = "deism-interface", extras = ["deploy", "tests", "docs"], marker = "extra == 'dev'" },
     { name = "gmsh" },
     { name = "matplotlib" },
@@ -2333,8 +2333,8 @@ name = "secretstorage"
 version = "3.5.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "cryptography" },
-    { name = "jeepney" },
+    { name = "cryptography", marker = "platform_machine != 'ARM64' or sys_platform != 'win32'" },
+    { name = "jeepney", marker = "platform_machine != 'ARM64' or sys_platform != 'win32'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/1c/03/e834bcd866f2f8a49a85eaff47340affa3bfa391ee9912a952a1faa68c7b/secretstorage-3.5.0.tar.gz", hash = "sha256:f04b8e4689cbce351744d5537bf6b1329c6fc68f91fa666f60a380edddcd11be", size = 19884, upload-time = "2025-11-23T19:02:53.191Z" }
 wheels = [

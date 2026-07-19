@@ -27,7 +27,7 @@ dependencies = [
     "matplotlib",
     "requests",
     "gmsh",
-    "deism==2.2.1.13",
+    "deism==2.2.1.14",
 ]
 
 [project.optional-dependencies]
@@ -44,7 +44,7 @@ tests = [
     "pytest-cov",
     "watchdog",
     "ruff",
-    # deism==2.2.1.13 pulls numba 0.66.0, whose coverage_support needs
+    # deism==2.2.1.14 pulls numba 0.66.0, whose coverage_support needs
     # coverage.types.Tracer (added in coverage 7.6.1). Older coverage breaks
     # `import deism` at test collection.
     "coverage>=7.6.1",
