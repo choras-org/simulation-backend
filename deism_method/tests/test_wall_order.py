@@ -7,7 +7,6 @@ on the Gmsh physical-tag declaration order -- otherwise a change in ``.geo``
 surface declaration order could silently permute boundary conditions.
 """
 
-import numpy as np
 import pytest
 
 from deism_interface.DEISMinterface import get_deism_surface_order
@@ -61,11 +60,28 @@ def test_ignores_non_surface_groups():
         get_deism_surface_order(surfaces, WALL_CENTERS)
 
 
-def test_wrong_surface_count_raises():
-    """A room without exactly six wall surfaces is rejected loudly."""
-    five = _vgroups(
-        [(2, "uuid-A"), (5, "uuid-B"), (4, "uuid-C"),
-         (6, "uuid-D"), (1, "uuid-E")]
-    )
+def test_fewer_than_four_surfaces_raises():
+    """A room that cannot be a closed polyhedron (< 4 faces) is rejected."""
+    three = _vgroups([(2, "uuid-A"), (5, "uuid-B"), (4, "uuid-C")])
     with pytest.raises(ValueError):
-        get_deism_surface_order(five, WALL_CENTERS)
+        get_deism_surface_order(three, WALL_CENTERS)
+
+
+def test_non_hexahedral_convex_rooms_accepted():
+    """Convex rooms need not have 6 walls (issues.md C2).
+
+    DEISM's convex/ARG path accepts any wall count M >= 4; the wrapper must
+    not impose a shoebox-like 6-wall requirement.
+    """
+    # 5 walls (e.g. a wedge) and 8 walls (e.g. a truncated box).
+    for extra in ([], [("g", "uuid-G"), ("h", "uuid-H"), ("i", "uuid-I")]):
+        pairs = [(2, "uuid-A"), (5, "uuid-B"), (4, "uuid-C"),
+                 (6, "uuid-D"), (1, "uuid-E")] + extra
+        centers = dict(WALL_CENTERS)
+        centers.update({
+            "uuid-G": [1.0, 0.5, 3.0],
+            "uuid-H": [3.0, 2.5, 3.0],
+            "uuid-I": [2.0, 2.9, 2.9],
+        })
+        result = get_deism_surface_order(_vgroups(pairs), centers)
+        assert sorted(result) == sorted(name for _, name in pairs)

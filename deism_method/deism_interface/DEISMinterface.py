@@ -209,19 +209,23 @@ def use_real_stdio():
 
 
 def get_deism_surface_order(vgroups_names, wall_centers_loaded):
-    """Return the 6 wall surface names in a deterministic order.
+    """Return the wall surface names in a deterministic order.
 
     CHORAS rooms take DEISM's convex/ARG path, which re-matches each wall to
     its absorption value by centroid proximity (see ``deism.core_deism_arg``).
-    The specific order is therefore irrelevant to the physics as long as each
-    surface's absorption stays paired with its own centroid -- which the caller
-    guarantees by keying both off the same surface name. We sort by centroid so
-    the result no longer depends on Gmsh physical-tag declaration order.
+    DEISM's convex path accepts any number of walls (``wallCenters`` is
+    ``(M, 3)``, ``roomAreas`` is ``(M,)``), so only a sanity floor is enforced:
+    a closed 3-D polyhedron has at least 4 faces. The specific order is
+    irrelevant to the physics as long as each surface's absorption stays
+    paired with its own centroid -- which the caller guarantees by keying both
+    off the same surface name. We sort by centroid so the result no longer
+    depends on Gmsh physical-tag declaration order.
     """
     surface_names = [name for dim, tag, name in vgroups_names if int(dim) == 2]
-    if len(surface_names) != 6:
+    if len(surface_names) < 4:
         raise ValueError(
-            f"DEISM requires exactly 6 wall surfaces, found {len(surface_names)}"
+            f"DEISM requires at least 4 wall surfaces (closed polyhedron), "
+            f"found {len(surface_names)}"
         )
     centers = {
         name: np.asarray(wall_centers_loaded[name], dtype=float)
@@ -371,17 +375,19 @@ class DeismMethod(SimulationMethod):
             abs_coeffs_loaded = result_container["absorption_coefficients"]
             freq_bands = np.array(result_container["results"][0]["frequencies"])
 
-            # Reorder room geometry and absorption coefficients into
-            # DEISM's expected wall order: x1, x2, y1, y2, z1, z2.
+            # Order room geometry and absorption coefficients deterministically
+            # (by centroid); DEISM's convex/ARG path re-matches each wall to its
+            # absorption value by centroid proximity, so any count M >= 4 works.
             vertices = np.array(result_container["geometry"][0]["vertices"])
             wall_centers_loaded = result_container["geometry"][0]["wall_centers"]
             room_volumn = result_container["geometry"][0]["room_volumn"]
             room_areas_loaded = result_container["geometry"][0]["room_areas"]
 
             wall_order = get_deism_surface_order(vgroups_names, wall_centers_loaded)
-            absorption_coefficients = np.zeros((6, len(freq_bands)))
-            wall_centers = np.zeros((6, 3))
-            room_areas = np.zeros((6, 1))
+            num_walls = len(wall_order)
+            absorption_coefficients = np.zeros((num_walls, len(freq_bands)))
+            wall_centers = np.zeros((num_walls, 3))
+            room_areas = np.zeros((num_walls, 1))
             for index, wall in enumerate(wall_order):
                 absorption_coefficients[index, :] = parse_value(abs_coeffs_loaded[wall])
                 wall_centers[index, :] = parse_value(wall_centers_loaded[wall])
