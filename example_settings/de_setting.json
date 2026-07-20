@@ -3,6 +3,7 @@
     "options": [
         {
             "name": "Simulation length",
+            "description": "Choose whether to set the simulation length based on the energy decay threshold (EDT) or by impulse response length.",
             "id": "sim_len_type",
             "type": "string",
             "display": "radio",
@@ -15,6 +16,7 @@
         },
         {
             "name": "Energy decay threshold",
+            "description": "The energy decay threshold for determining the simulation length. Once the energy decays below this threshold, the simulation will terminate.",
             "id": "edt",
             "type": "integer",
             "display": "text",
@@ -26,6 +28,7 @@
         },
         {
             "name": "Impulse response length",
+            "description": "The maximum length of the impulse response to be simulated.",
             "id": "de_ir_length",
             "type": "float",
             "display": "text",
@@ -37,6 +40,7 @@
         },
         {
             "name": "Speed of sound",
+            "description": "Speed of sound in air filling the room.",
             "id": "de_c0",
             "type": "float",
             "display": "text",
@@ -48,6 +52,7 @@
         },
         {
             "name": "Characteristic length (mesh)",
+            "description": "Characteristic length of the mesh used in the simulation.",
             "id": "de_lc",
             "type": "float",
             "display": "text",
