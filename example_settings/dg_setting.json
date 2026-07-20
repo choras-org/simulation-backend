@@ -3,6 +3,7 @@
     "options": [
         {
             "name": "Freq. upper limit",
+            "description": "Upper frequency limit up to which the spectrum will be simulated.",
             "id": "dg_freq_upper_limit",
             "type": "integer",
             "display": "text",
@@ -14,6 +15,7 @@
         },
         {
             "name": "Speed of sound",
+            "description": "Speed of sound in air filling the room.",
             "id": "dg_c0",
             "type": "float",
             "display": "text",
@@ -25,6 +27,7 @@
         },
         {
             "name": "Air density",
+            "description": "Density of air filling the room.",
             "id": "dg_rho0",
             "type": "float",
             "display": "text",
@@ -36,6 +39,7 @@
         },
         {
             "name": "Impulse Response length",
+            "description": "Length of the impulse response to be simulated.",
             "id": "dg_ir_length",
             "type": "float",
             "display": "text",
@@ -47,6 +51,7 @@
         },
         {
             "name": "Poly order",
+            "description": "The polynomial order of the basis functions used in the simulation.",
             "id": "dg_poly_order",
             "type": "integer",
             "display": "text",
@@ -57,6 +62,7 @@
         },
         {
             "name": "Points per wavelength",
+            "description": "The number of discretization points per wavelength.",
             "id": "dg_ppw",
             "type": "integer",
             "display": "text",
@@ -67,6 +73,7 @@
         },
         {
             "name": "CFL",
+            "description": "The Courant–Friedrichs–Lewy condition for the stability of the numerical scheme.",
             "id": "dg_cfl",
             "type": "float",
             "display": "text",
