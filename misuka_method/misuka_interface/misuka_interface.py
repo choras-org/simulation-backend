@@ -11,8 +11,10 @@ import pyrato as pr
 import pandas as pd
 import os
 from pathlib import Path
+import logging
+logger = logging.getLogger(__name__)
 
-mi.set_variant("cuda_acoustic", "llvm_acoustic", "cuda_ad_acoustic", "llvm_ad_acoustic")
+mi.set_variant("llvm_ad_acoustic")
 
 from .definition import SimulationMethod
 
@@ -31,72 +33,66 @@ class misukaMethod(SimulationMethod):
         super().__init__(input_json_path)
 
     def run_simulation(self) -> None:
-        """Run the simulation.
+        """Run the simulation using the JSON file provided at initialization."""
+        self._misuka_method()
 
-        Parameters
-        ----------
-        json_file_path : str | Path | None, optional
-            Path to the JSON file. If not provided, uses the path from initialization.
+
+    def _misuka_method(self) -> None:
         """
-        self._misuka_method(self.input_json_path)
+        Run the misuka simulation method using the input JSON file.
 
+        Reads the simulation settings from the user configuration JSON file
+        (self.input_json_path), sets up the scene, and performs the simulation
+        for each source-receiver pair. Results are written back to the input
+        JSON file, including the EDC and acoustic parameters for each
+        source-receiver pair.
 
-    def _misuka_method(self, json_file_path: str | Path) -> None:
+        Raises
+        ------
+        KeyError
+        - If required keys are missing in the input JSON file.
+        
+        ValueError
+        - If a receiver is at the same position as the source.
+        - If the position of a source is the same as a receiver.
         """
-        Run misuka simulation for acoustic wave propagation.
-
-        Args:
-            json_file_path: Path to the JSON configuration file
-        """
-
-        # ----------------------------------------------------------------
-        # ------- fetching simulation settings and initialization -------
-        # ----------------------------------------------------------------
 
         try:
             # Load the input JSON file
-            with open(json_file_path, "r") as json_file:
+            with open(self.input_json_path, "r") as json_file:
                 result_container = json.load(json_file)
         except KeyError as e:
             raise KeyError(f"Could not fetch the simulation settings for misuka T.T: {e}")
         
-        simulation_settings = result_container["simulationSettings"]
-        speed_of_sound = simulation_settings["speed_of_sound"]
-        max_time = simulation_settings["max_time"]
-        time_bins = simulation_settings["sampling_rate"]
-        rpf = simulation_settings["rays_per_frequency"]
-        sound_power_W = simulation_settings["sound_power_W"]
-        n_receivers = len(result_container["results"][0]["responses"])
-        frequencies = result_container["results"][0]["frequencies"]
-        msh_path = result_container["msh_path"]
-        absorption_map = result_container["absorption_coefficients"]
-        dynamic_range_db = simulation_settings["dynamic_range_db"] == "yes"
-        log_data = simulation_settings["log_data"] == "yes"
-        
-        logger.info(f'Using variant: {mi.variant()}')
-        logger.info(f'Input value for speed of sound: {speed_of_sound}')
-        logger.info(f'Input value for maximum simulation time: {max_time}')
-        logger.info(f'Input value for time_bins: {time_bins}')
-        logger.info(f'Input value for rays per frequency: {rpf}')
-        logger.info(f'Input value for source sound power in W: {sound_power_W}')
-        logger.info(f'Rendered frequencies: {frequencies}')
-        logger.info(f'Input values for absorption: {absorption_map}')
-        logger.info(f'Use dynamic range limiter: {dynamic_range_db}')
+        try:
+            simulation_settings = result_container["simulationSettings"]
+            speed_of_sound = simulation_settings["speed_of_sound"]
+            max_time = simulation_settings["max_time"]
+            time_bins = simulation_settings["sampling_rate"]
+            rpf = simulation_settings["rays_per_frequency"]
+            n_receivers = len(result_container["results"][0]["responses"])
+            frequencies = result_container["results"][0]["frequencies"]
+            msh_path = result_container["msh_path"]
+            absorption_map = result_container["absorption_coefficients"]
+            dynamic_range_limiter = simulation_settings["dynamic_range_db"] == "yes"
+            scattering_str = simulation_settings["scattering_coefficients"]
+        except KeyError as e:
+            raise KeyError(f"Missing required key in the input JSON file: {e}")
 
+        logger.info(f'Using variant: {mi.variant()}')
+        logger.info(f'Rendered frequencies: {frequencies}')
+        logger.info(f'Input value for rays per frequency: {rpf}')
+        logger.info(f'Input value for maximum response length: {max_time}')
+        logger.info(f'Input value for time_bins: {time_bins}')
+        logger.info(f'Input value for speed of sound: {speed_of_sound}')
+        logger.info(f'Use dynamic range limiter: {dynamic_range_limiter}')
+        logger.info(f'Input values for absorption: {absorption_map}')
         
         frequency_range = (float(np.min(frequencies)), float(np.max(frequencies)))
         f_center, f_lower, f_upper = pf.constants.fractional_octave_frequencies_exact(1, frequency_range)
         assert np.all(np.abs(f_center-frequencies)/frequencies < 1e-2), "Frequency mismatch between input frequencies and pyrato's fractional octave frequencies"
         frequencies_misuka = ", ".join(str(f) for f in frequencies)
 
-        #TODO: currently using scattering specified by misuka_setting / User... for future use from msh file
-        scattering_map = [
-            simulation_settings[f"scattering_{int(f)}"]
-            for f in frequencies
-        ]
-        # Create frequency-scattering tuples for spectrum
-        scattering_spectrum = create_frequency_spectrum(frequencies, scattering_map) #TODO: when scattering is surface material dependent move this into for loop
-        
         source_coords = [ #TODO: when multiple soundsources are implemented adjust like receiver_coords
             [
                 result_container["results"][0]["sourceX"],
@@ -113,10 +109,10 @@ class misukaMethod(SimulationMethod):
             for i in range(n_receivers)
         ]
 
-        if log_data: print(f'Source coordinates: {source_coords}\n Reciever coordinates: {receiver_coords}')
+        logger.info(f'Source coordinates: {source_coords}\n Reciever coordinates: {receiver_coords}')
 
         # updating percentage of progress
-        set_progress_and_save(25, result_container, json_file_path)
+        set_progress_and_save(25, result_container, self.input_json_path)
 
         # set up the integrator
         integrator_acoustic = mi.load_dict(
@@ -128,11 +124,7 @@ class misukaMethod(SimulationMethod):
             }
         )
 
-        if log_data: print(f'Integrator: {integrator_acoustic}')
-
-        # ----------------------------------------------------------------
-        # --------------------- initializing scene ---------------------
-        # ----------------------------------------------------------------
+        logger.info(f'Integrator Setup: {integrator_acoustic}')
        
         # define scene as dictionary
         scene_dict = {
@@ -140,50 +132,13 @@ class misukaMethod(SimulationMethod):
         }
 
         # Extract physical group information from gmsh
-        gmsh.initialize()
-        gmsh.open(str(msh_path))
-        surfaces = gmsh.model.getPhysicalGroups(2)
-
-        # For each surface, create a separate PLY file
-        # Nach gmsh.open(str(msh_file)):
-        ply_dir = Path(msh_path).parent
-
-        for i, (dim, tag) in enumerate(surfaces):
-            surface_name = gmsh.model.getPhysicalName(dim, tag)
-            absorption_str = absorption_map.get(surface_name, "0.1, 0.1, 0.1, 0.1, 0.1, 0.1")
-            entity_tags = gmsh.model.getEntitiesForPhysicalName(surface_name)
-
-            ply_file = str(ply_dir / f"surface_{surface_name}.ply")  # korrekt
-            export_physical_surface_to_ply(surface_name, entity_tags, ply_file)
-            absorption_spectrum = create_frequency_spectrum(frequencies, absorption_str)
-
-            scene_dict[f"bsdf_{i}"] = {
-                "type": "twosided",
-                "id": f"bsdf_{i}",
-                "bsdf": {
-                    "type": "acousticbsdf",
-                    "absorption": {
-                        "type": "spectrum",
-                        "value": absorption_spectrum,
-                    },
-                    "scattering": {
-                        "type": "spectrum",
-                        "value": scattering_spectrum,
-                    },
-                    "specular_lobe_width": 0.001,
-                },
-            }
-
-            scene_dict[f"shape_{i}"] = {
-                "type": "ply",
-                "filename": ply_file,
-                "face_normals": True,
-                "bsdf": {"type": "ref", "id": f"bsdf_{i}"},
-            }
-
-        # ----------------------------------------------------------------
-        # -------- rendering for every source to every reciever ----------
-        # ----------------------------------------------------------------
+        scene_dict = build_scene_from_gmsh(
+            scene_dict,
+            msh_path,
+            absorption_map,
+            frequencies,
+            scattering_str,
+        )
         
         for i_src, source_coord in enumerate(source_coords):
             for i_rec, receiver_coord in enumerate(receiver_coords):
@@ -207,6 +162,8 @@ class misukaMethod(SimulationMethod):
                     },
                 })
 
+                logger.info(f'Loaded Microphone for reciever at {receiver_coord} and source at {source_coord}: {microphone}')
+
                 scene_dict["emitter"] = {
                     "type": "sphere",
                     "radius": 0.1,
@@ -214,15 +171,15 @@ class misukaMethod(SimulationMethod):
                     "emitter": {
                         'type': 'area',
                         'radiance': {
-                        'type': 'uniform',
-                        'value': sound_power_W,
+                            'type': 'uniform',
+                            'value': 30.0 # not scaled yet but needs some value to successfully load scene
                         }
                     }
                 }
 
                 scene = mi.load_dict(scene_dict)
 
-                if log_data: print(f'Loaded Scene for reciever at {receiver_coord} and source at {source_coord}: {scene}')
+                logger.info(f'Loaded Scene for reciever at {receiver_coord} and source at {source_coord}: {scene}')
 
                 #TODO: use sound_power_W for scaling the etc
                 etc = mi.render(scene, sensor=microphone, integrator=integrator_acoustic,spp=rpf)
@@ -230,11 +187,12 @@ class misukaMethod(SimulationMethod):
                 etc_signal.time /= np.max(np.abs(etc_signal.time))
                 edc = pr.edc.schroeder_integration(etc_signal, is_energy=True)
                 edc_normalized = pf.dsp.normalize(edc)
-                edc_normalized_db = 10*np.log10(edc_normalized.time/1e-12)
+                with np.errstate(divide='ignore', invalid='ignore'):
+                    edc_normalized_db = 10*np.log10(edc_normalized.time/1e-12)
                 edc_normalized_db = np.squeeze(edc_normalized_db, axis=0)
-                edc_normalized_db = finite_array(edc_normalized_db, nan=0.0, neginf=-600.0, posinf=0.0)
+                edc_normalized_db = finite_array(edc_normalized_db, nan=0.0, neginf=-100, posinf=0.0)
                 
-                if dynamic_range_db:
+                if dynamic_range_limiter:
                     limit = np.max(edc_normalized_db) - 100
                     edc_normalized_db[edc_normalized_db<limit] = limit
 
@@ -267,7 +225,8 @@ class misukaMethod(SimulationMethod):
                 ts = center_time(edc)*1000 # in ms TODO replace by pyrato 1.1.0 version
                 result_container["results"][0]["responses"][i_rec]["parameters"]['ts'] = np.squeeze(ts).tolist()
 
-                spl = np.squeeze(10*np.log10(edc.time[..., 0]/1e-12))
+                with np.errstate(divide='ignore', invalid='ignore'):
+                    spl = np.squeeze(10*np.log10(edc.time[..., 0]/1e-12))
                 spl = finite_array(spl, nan=0.0, neginf=0.0, posinf=0.0)
                 result_container["results"][0]["responses"][i_rec]["parameters"]['spl_t0_freq'] = spl.tolist()
 
@@ -276,18 +235,167 @@ class misukaMethod(SimulationMethod):
                 result_container["results"][0]["responses"][i_rec]["parameters"]['edt'] = edt.tolist()
 
             # update progress for each source in even steps to ~90%
-            set_progress_and_save(35 + int(55/(n_receivers+1) * (i_src + 1)), result_container, json_file_path)
+            set_progress_and_save(35 + int(55/(n_receivers+1) * (i_src + 1)), result_container, self.input_json_path)
         
-
         # set to 100%
-        set_progress_and_save(100, result_container, json_file_path)
+        set_progress_and_save(100, result_container, self.input_json_path)
 
 
+def build_scene_from_gmsh(
+    scene_dict: dict,
+    msh_path: str | Path,
+    absorption_map: dict,
+    frequencies: list,
+    scattering_str: str,
+) -> dict:
+    """Initialize Gmsh, export physical surfaces to PLY and populate the Mitsuba scene.
 
+    This function loads a mesh file using Gmsh, extracts all physical surface groups,
+    exports each surface as a separate PLY file, and populates a Mitsuba scene dictionary
+    with the corresponding material properties (BSDF and geometry). Gmsh is guaranteed
+    to be finalized even if an exception occurs during processing.
 
+    Parameters
+    ----------
+    scene_dict : dict
+        Base Mitsuba scene dictionary to populate. Should contain at least
+        `{"type": "scene"}` as a starting point.
+    msh_path : str | Path
+        Path to the Gmsh mesh file (.msh format) containing physical groups
+        defining surfaces.
+    absorption_map : dict
+        Mapping of physical surface names to absorption coefficient strings.
+        Each value should be a comma-separated string of 5 absorption coefficients
+        (one per frequency band). Surfaces not in the map default to
+        "0.1, 0.1, 0.1, 0.1, 0.1".
+    frequencies : list
+        List of frequency values (in Hz) for which to define the acoustic spectrum.
+        Example: [125, 250, 500, 1000, 2000, 4000].
+    scattering_str : str
+        Comma-separated string of scattering coefficients (one per frequency band).
+        Applied uniformly to all surfaces.
 
+    Returns
+    -------
+    dict
+        Populated Mitsuba scene dictionary containing BSDF definitions and PLY geometry
+        references for all physical surfaces. The dictionary includes keys like:
+        `bsdf_0`, `bsdf_1`, ... for material properties and
+        `shape_0`, `shape_1`, ... for geometry references.
 
-def set_progress_and_save(percentage, result_container, json_file_path):
+    Raises
+    ------
+    RuntimeError:
+    - If Gmsh fails to initialize, open the mesh file, extract physical groups,
+    or export surfaces. The original exception is chained for debugging.
+
+    Notes
+    -----
+    - PLY files are exported to the same directory as the input mesh file with
+      naming convention: `surface_{physical_group_name}.ply`.
+    - All physical groups of dimension 2 (surfaces) are processed. Groups with
+      other dimensions are ignored.
+    - Gmsh is finalized in a finally block to ensure cleanup even on error.
+    - Only triangular mesh faces (3 nodes per element) are exported to PLY.
+
+    Examples
+    --------
+    >>> import json
+    >>> from pathlib import Path
+    >>> scene_base = {"type": "scene"}
+    >>> msh_file = Path("room.msh")
+    >>> absorption = {"Wall": "0.2, 0.2, 0.3, 0.3, 0.4, 0.4", "Floor": "0.1, 0.1, 0.15, 0.15, 0.2, 0.2"}
+    >>> freq = [125, 250, 500, 1000, 2000, 4000]
+    >>> scatter_spec = [(125, 0.05), (250, 0.05), (500, 0.1), (1000, 0.1), (2000, 0.15), (4000, 0.15)]
+    >>> result = build_scene_from_gmsh(scene_base, msh_file, absorption, freq, scatter_spec)
+    >>> "bsdf_0" in result
+    True
+    """
+    try:
+        gmsh.initialize()
+        gmsh.open(str(msh_path))
+        surfaces = gmsh.model.getPhysicalGroups(2)
+
+        ply_dir = Path(msh_path).parent
+
+        #TODO: when scattering is surface material dependent move this into for loop
+        scattering_spectrum = create_frequency_value_pairs(
+            frequencies,
+            scattering_str,
+            num_tuples=len(frequencies),
+        )
+
+        for i, (dim, tag) in enumerate(surfaces):
+            surface_name = gmsh.model.getPhysicalName(dim, tag)
+            absorption_str = absorption_map.get(surface_name, "0.1, 0.1, 0.1, 0.1, 0.1, 0.1")
+            entity_tags = [
+                (dim, entity_tag)
+                for entity_tag in gmsh.model.getEntitiesForPhysicalGroup(dim, tag)
+            ]
+
+            ply_file = str(ply_dir / f"surface_{surface_name}.ply")
+            export_physical_surface_to_ply(surface_name, entity_tags, ply_file)
+            absorption_spectrum = create_frequency_value_pairs(
+                frequencies,
+                absorption_str,
+                num_tuples=len(frequencies),
+            )
+
+            scene_dict[f"bsdf_{i}"] = {
+                "type": "twosided",
+                "id": f"bsdf_{i}",
+                "bsdf": {
+                    "type": "acousticbsdf",
+                    "absorption": {
+                        "type": "spectrum",
+                        "value": absorption_spectrum,
+                    },
+                    "scattering": {
+                        "type": "spectrum",
+                        "value": scattering_spectrum,
+                    },
+                    "specular_lobe_width": 0.001,
+                },
+            }
+
+            scene_dict[f"shape_{i}"] = {
+                "type": "ply",
+                "filename": ply_file,
+                "face_normals": True,
+                "bsdf": {"type": "ref", "id": f"bsdf_{i}"},
+            }
+
+        return scene_dict
+    except Exception as exc:
+        logger.exception("Failed to build Mitsuba scene from geometry '%s'.", msh_path)
+        raise RuntimeError(f"Failed to build Mitsuba scene from geometry '{msh_path}'.") from exc
+    finally:
+        try:
+            gmsh.finalize()
+        except Exception:
+            logger.debug("Gmsh finalize skipped because it was not initialized.")
+
+def set_progress_and_save(percentage: int, result_container: dict, json_file_path: str | Path):
+    """Update the simulation progress state and persist it to the JSON result file.
+
+    The function writes the current percentage into the first result entry,
+    removes any outdated percentage list entries, and saves the updated
+    result container back to the given JSON file.
+
+    Parameters
+    ----------
+    percentage : int
+        Current progress percentage (0-100).
+    result_container : dict
+        Dictionary containing the simulation results and settings.
+    json_file_path : str | Path
+        Path to the JSON file where the updated result container will be saved.
+
+    Notes
+    -----
+    - The function updates the ``percentage`` field in the first result of the result container.
+    - It can also be used to persist any other updates made to the container data.
+    """
     result = result_container["results"][0]
     result["percentage"] = percentage
     result.pop("percentages", None)
@@ -295,35 +403,91 @@ def set_progress_and_save(percentage, result_container, json_file_path):
     with open(json_file_path, "w") as json_output:
         json_output.write(json.dumps(result_container, indent=4, allow_nan=False))
 
-def create_frequency_spectrum(frequencies: list, values) -> list:
-    """Create frequency-value tuples for Mitsuba spectrum format.
-    
+def create_frequency_value_pairs(frequencies: list, val_str: str, num_tuples: int = 5) -> list:
+    """Create a configurable number of frequency-value tuples for Mitsuba spectra.
+
+    This function takes a list of frequencies and a comma-separated string of values,
+    validates the input on the number of values, their range and same size as the frequency list, 
+    and returns a list of (frequency, value) tuples suitable for Mitsuba's spectrum format. The function
+    is used e.g. for scattering and absorption coefficients.
+
     Parameters
     ----------
     frequencies : list
         List of frequency values [125, 250, 500, ...]
-    values : list or str
-        Either a list of floats or a comma-separated string of values
-    
+    val_str : str
+        A comma-separated string of values.
+    num_tuples : int, optional
+        Number of frequency-value tuples to create. The default is 5.
+
     Returns
     -------
     list
-        List of (frequency, value) tuples for Mitsuba spectrum
+        List of (frequency, value) tuples for Mitsuba spectrum.
+
+    Raises
+    ------
+    ValueError:
+    - if ``num_tuples`` is not a positive integer
+    - If the number of values in the string does not match ``num_tuples``
+    - If any value is outside the range [0, 1]
+    - If Value string is empty or not convertible to float
+    - If the number of frequencies does not match ``num_tuples``
+
+    Examples
+    --------
+    >>> create_frequency_value_pairs([125, 250, 500, 1000, 2000], "0.1, 0.2, 0.3, 0.4, 0.5")
+    [(125, 0.1), (250, 0.2), (500, 0.3), (1000, 0.4), (2000, 0.5)]
+    >>> create_frequency_value_pairs([125, 250, 500, 1000, 2000], "0.1, 0.2, 0.3, 0.4, 1.5")
+    ValueError: Number of Values in String must match the requested number of tuples and each must be between 0 and 1.
+    >>> create_frequency_value_pairs([125, 250, 500, 1000, 2000], "0.1, 0.2, 0.3, 0.4, 0.5, 0.5", num_tuples=6)
+    [(125, 0.1), (250, 0.2), (500, 0.3), (1000, 0.4), (2000, 0.5)]
     """
-    # Parse values if string
-    if isinstance(values, str):
-        vals = [float(val.strip()) for val in values.split(",")]
-    else:
-        vals = [float(val) for val in values]
-    
-    # Pad with default value (0.1) if not enough values provided
-    while len(vals) < len(frequencies):
-        vals.append(0.1)
-    
-    return list(zip(frequencies, vals[:len(frequencies)]))
+    try:
+        if not isinstance(num_tuples, int) or num_tuples <= 0:
+            raise ValueError("Number of tuples must be a positive integer.")
+        if len(frequencies) != num_tuples:
+            raise ValueError("Number of frequencies must match the requested number of tuples.")
+        if not val_str:
+            raise ValueError("Value string is empty.")
+
+        vals = [float(val.strip()) for val in val_str.split(",")]
+        if len(vals) != num_tuples or any(val < 0 or val > 1 for val in vals):
+            raise ValueError(
+                "Number of Values in String must match the requested number of tuples and each must be between 0 and 1."
+            )
+    except ValueError as e:
+        logger.error(f"Error parsing Values: {e}")
+        raise ValueError(f"Invalid values: {val_str}") from e
+
+    return list(zip(frequencies[:num_tuples], vals))
 
 def export_physical_surface_to_ply(surface_name: str, entity_tags, ply_path: str | Path) -> Path:
-    """Export only the triangular mesh faces of one physical surface to PLY."""
+    """Export only the triangular mesh faces of one physical surface to PLY.
+
+    This function extracts the triangular mesh faces corresponding to a specific physical surface (specified by name and entity tags)
+    from a Gmsh model and exports them to a PLY file. It ensures that only triangular elements
+    are included, and raises an error if no triangular faces are found.
+
+    Parameters
+    ----------
+    surface_name : str 
+        Name of the physical surface to export
+    entity_tags : list of tuples
+        List of (dimension, entity_tag) tuples for the physical surface
+    ply_path : str | Path
+        Path to the output PLY file
+
+    Returns
+    -------
+    Path
+        Path to the exported PLY file
+    
+    Raises
+    ------
+    ValueError:
+    - If the physical surface contains no triangular mesh faces.
+    """
     ply_path = Path(ply_path)
     node_tags_all, coords_all, _ = gmsh.model.mesh.getNodes()
     coords_all = coords_all.reshape((len(node_tags_all), 3))
@@ -453,6 +617,25 @@ def center_time(energy_decay_curve):
     return center_time
 
 def finite_array(values, nan=0.0, posinf=0.0, neginf=0.0) -> np.ndarray:
+    """
+    Replace NaN, positive infinity, and negative infinity in an array with specified finite values.
+    
+    Parameters
+    ----------
+    values : array-like
+        Input array.
+    nan : float, optional
+        Value to replace NaN with. Default is 0.0.
+    posinf : float, optional
+        Value to replace positive infinity with. Default is 0.0.
+    neginf : float, optional
+        Value to replace negative infinity with. Default is 0.0.
+
+    Returns
+    -------
+    np.ndarray
+        Array with specified values replacing NaN and infinity.
+    """
     return np.nan_to_num(
         np.asarray(values, dtype=float),
         nan=nan,

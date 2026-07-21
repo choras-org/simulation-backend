@@ -34,17 +34,6 @@
             "endAdornment": "Hz"
         },
         {
-            "name": "Sound Power of Source",
-            "id": "sound_power_W",
-            "display": "text",
-            "type": "float",
-            "min": 0.1,
-            "max": 50,
-            "step": 5,
-            "default": 1,
-            "endAdornment": "W"
-        },
-        {
             "name": "Speed of Sound",
             "id": "speed_of_sound",
             "display": "text",
@@ -68,82 +57,12 @@
             "default": "no"
         },
         {
-            "name": "Scattering for 125 Hz",
-            "id": "scattering_125",
+            "name": "Scattering as [s(125), s(250), s(500), s(1000), s(2000)]",
+            "id": "scattering_coefficients",
             "display": "text",
-            "type": "float",
-            "min": 0,
-            "max": 1,
-            "step": 0.1,
-            "default": 0.1,
-            "endAdornment": ""
-        },
-        {
-            "name": "Scattering for 250 Hz",
-            "id": "scattering_250",
-            "display": "text",
-            "type": "float",
-            "min": 0,
-            "max": 1,
-            "step": 0.1,
-            "default": 0.1,
-            "endAdornment": ""
-        },
-        {
-            "name": "Scattering for 500 Hz",
-            "id": "scattering_500",
-            "display": "text",
-            "type": "float",
-            "min": 0,
-            "max": 1,
-            "step": 0.1,
-            "default": 0.1,
-            "endAdornment": ""
-        },
-        {
-            "name": "Scattering for 1000 Hz",
-            "id": "scattering_1000",
-            "display": "text",
-            "type": "float",
-            "min": 0,
-            "max": 1,
-            "step": 0.1,
-            "default": 0.1,
-            "endAdornment": ""
-        },
-        {
-            "name": "Scattering for 2000 Hz",
-            "id": "scattering_2000",
-            "display": "text",
-            "type": "float",
-            "min": 0,
-            "max": 1,
-            "step": 0.1,
-            "default": 0.1,
-            "endAdornment": ""
-        },
-        {
-            "name": "Scattering for 4000 Hz",
-            "id": "scattering_4000",
-            "display": "text",
-            "type": "float",
-            "min": 0,
-            "max": 1,
-            "step": 0.1,
-            "default": 0.1,
-            "endAdornment": ""
-        },
-        {
-            "name": "Provide more Log Data",
-            "id": "log_data",
             "type": "string",
-            "display": "radio",
-            "options": 
-            {
-                "yes": "yes", 
-                "no": "no"
-            },
-            "default": "no"
+            "default": "0.1, 0.1, 0.1, 0.1, 0.1",
+            "endAdornment": ""
         }
     ],
 

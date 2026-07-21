@@ -4,18 +4,13 @@ version = "0.1.0"
 description = ""
 requires-python = ">=3.9,<3.14"
 authors = [
-    { name = "Tobias Jüterbock", email = "a.jueterbock@tu-berlin.de" },
+    { name = "Timon Schnell", email = "t.schnell@campus.tu-berlin.de" },
 ]
 keywords = [
-
     "acoustic simulation",
-
     "geometrical acoustics",
-
     "open-source",
-
     "acoustic path tracing",
-
 ]
 
 classifiers = [
@@ -24,12 +19,11 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Natural Language :: English",
     "Programming Language :: Python :: 3",
-
     "Programming Language :: Python :: 3.9",
-
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
-
 ]
 dependencies = [
     "numpy>=1.23.0",
