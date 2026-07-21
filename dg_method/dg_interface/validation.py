@@ -17,8 +17,7 @@ def run_method_validation(input_file: str) -> dict:
             - compatible (bool): True if geometry is suitable, False otherwise
             - reason (str): Human-readable explanation
     """
-    # TODO: real checks (watertightness, manifold, planar-faceted, etc.).
-    # Hardcoded result for now (incompatible sample to test override):
+    # TODO: real checks (also consider limitation of current DG implementation)
     return {
         "compatible": False,
         "reason": "DG requires a watertight, manifold, planar-faceted mesh; "
