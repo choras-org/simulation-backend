@@ -74,7 +74,7 @@ class misukaMethod(SimulationMethod):
             frequencies = result_container["results"][0]["frequencies"]
             msh_path = result_container["msh_path"]
             absorption_map = result_container["absorption_coefficients"]
-            dynamic_range_limiter = simulation_settings["dynamic_range_db"] == "yes"
+            dynamic_range_limiter = simulation_settings["dynamic_range_db"]
             scattering_str = simulation_settings["scattering_coefficients"]
         except KeyError as e:
             raise KeyError(f"Missing required key in the input JSON file: {e}")
@@ -85,7 +85,7 @@ class misukaMethod(SimulationMethod):
         logger.info(f'Input value for maximum response length: {max_time}')
         logger.info(f'Input value for time_bins: {time_bins}')
         logger.info(f'Input value for speed of sound: {speed_of_sound}')
-        logger.info(f'Use dynamic range limiter: {dynamic_range_limiter}')
+        logger.info(f'Use dynamic range limiter: {dynamic_range_limiter} (-1 or 0 means no limiter)')
         logger.info(f'Input values for absorption: {absorption_map}')
         
         frequency_range = (float(np.min(frequencies)), float(np.max(frequencies)))
@@ -190,10 +190,10 @@ class misukaMethod(SimulationMethod):
                 with np.errstate(divide='ignore', invalid='ignore'):
                     edc_normalized_db = 10*np.log10(edc_normalized.time/1e-12)
                 edc_normalized_db = np.squeeze(edc_normalized_db, axis=0)
-                edc_normalized_db = finite_array(edc_normalized_db, nan=0.0, neginf=-100, posinf=0.0)
+                edc_normalized_db = finite_array(edc_normalized_db, nan=0.0, neginf=-100, posinf=100)
                 
-                if dynamic_range_limiter:
-                    limit = np.max(edc_normalized_db) - 100
+                if dynamic_range_limiter > 0:
+                    limit = np.max(edc_normalized_db) - dynamic_range_limiter
                     edc_normalized_db[edc_normalized_db<limit] = limit
 
                 result_container["results"][0]["responses"][i_rec]["receiverResults"] = [
@@ -206,33 +206,35 @@ class misukaMethod(SimulationMethod):
                     for i_frq in range(len(frequencies))
                 ]
 
-                t20 = np.squeeze(pr.parameters.reverberation_time_linear_regression(edc, 'T20'))
-                t20 = finite_array(t20, nan=0.0, neginf=0.0, posinf=0.0)
-                result_container["results"][0]["responses"][i_rec]["parameters"]['t20'] = t20.tolist()
-
-                t30 = np.squeeze(pr.parameters.reverberation_time_linear_regression(edc, 'T30'))
-                t30 = finite_array(t30, nan=0.0, neginf=0.0, posinf=0.0)
-                result_container["results"][0]["responses"][i_rec]["parameters"]['t30'] = t30.tolist()
-
-                c80 = np.squeeze(pr.parameters.clarity(edc, 80))
-                c80 = finite_array(c80, nan=0.0, neginf=0.0, posinf=0.0)
-                result_container["results"][0]["responses"][i_rec]["parameters"]['c80'] = c80.tolist()
-
-                d50 = np.squeeze(pr.parameters.definition(edc, 50)) * 100
-                d50 = finite_array(d50, nan=0.0, neginf=0.0, posinf=0.0)
-                result_container["results"][0]["responses"][i_rec]["parameters"]['d50'] = d50.tolist()
-
-                ts = center_time(edc)*1000 # in ms TODO replace by pyrato 1.1.0 version
-                result_container["results"][0]["responses"][i_rec]["parameters"]['ts'] = np.squeeze(ts).tolist()
-
                 with np.errstate(divide='ignore', invalid='ignore'):
-                    spl = np.squeeze(10*np.log10(edc.time[..., 0]/1e-12))
-                spl = finite_array(spl, nan=0.0, neginf=0.0, posinf=0.0)
-                result_container["results"][0]["responses"][i_rec]["parameters"]['spl_t0_freq'] = spl.tolist()
+                    t20 = np.squeeze(pr.parameters.reverberation_time_linear_regression(edc, 'T20'))
+                    t20 = finite_array(t20, nan=0.0, neginf=0.0, posinf=0.0)
+                    result_container["results"][0]["responses"][i_rec]["parameters"]['t20'] = t20.tolist()
 
-                edt = np.squeeze(pr.parameters.reverberation_time_linear_regression(edc, 'EDT'))
-                edt = finite_array(edt, nan=0.0, neginf=0.0, posinf=0.0)
-                result_container["results"][0]["responses"][i_rec]["parameters"]['edt'] = edt.tolist()
+                    t30 = np.squeeze(pr.parameters.reverberation_time_linear_regression(edc, 'T30'))
+                    t30 = finite_array(t30, nan=0.0, neginf=0.0, posinf=0.0)
+                    result_container["results"][0]["responses"][i_rec]["parameters"]['t30'] = t30.tolist()
+
+                    c80 = np.squeeze(pr.parameters.clarity(edc, 80))
+                    c80 = finite_array(c80, nan=0.0, neginf=0.0, posinf=0.0)
+                    result_container["results"][0]["responses"][i_rec]["parameters"]['c80'] = c80.tolist()
+
+                    d50 = np.squeeze(pr.parameters.definition(edc, 50)) * 100
+                    d50 = finite_array(d50, nan=0.0, neginf=0.0, posinf=0.0)
+                    result_container["results"][0]["responses"][i_rec]["parameters"]['d50'] = d50.tolist()
+
+                    ts = center_time(edc)*1000 # in ms TODO replace by pyrato 1.1.0 version
+                    result_container["results"][0]["responses"][i_rec]["parameters"]['ts'] = np.squeeze(ts).tolist()
+
+
+                    spl = np.squeeze(10*np.log10(edc.time[..., 0]/1e-12))
+                    spl = finite_array(spl, nan=0.0, neginf=0.0, posinf=0.0)
+                    result_container["results"][0]["responses"][i_rec]["parameters"]['spl_t0_freq'] = spl.tolist()
+
+                    
+                    edt = np.squeeze(pr.parameters.reverberation_time_linear_regression(edc, 'EDT'))
+                    edt = finite_array(edt, nan=0.0, neginf=0.0, posinf=0.0)
+                    result_container["results"][0]["responses"][i_rec]["parameters"]['edt'] = edt.tolist()
 
             # update progress for each source in even steps to ~90%
             set_progress_and_save(35 + int(55/(n_receivers+1) * (i_src + 1)), result_container, self.input_json_path)
@@ -401,7 +403,10 @@ def set_progress_and_save(percentage: int, result_container: dict, json_file_pat
     result.pop("percentages", None)
     # Save the updated JSON
     with open(json_file_path, "w") as json_output:
-        json_output.write(json.dumps(result_container, indent=4, allow_nan=False))
+        json_output.write(json.dumps(result_container, 
+                                     indent=4,
+                                     allow_nan=False
+                                     ))
 
 def create_frequency_value_pairs(frequencies: list, val_str: str, num_tuples: int = 5) -> list:
     """Create a configurable number of frequency-value tuples for Mitsuba spectra.
@@ -539,7 +544,7 @@ def export_physical_surface_to_ply(surface_name: str, entity_tags, ply_path: str
     return ply_path
 
 # copy pasted from pyrato
-def center_time(energy_decay_curve):
+def center_time(energy_decay_curve: pf.TimeData) -> np.ndarray:
     r"""
     Calculate the room-acoustic center time (:math:`T_s`).
 
@@ -616,7 +621,7 @@ def center_time(energy_decay_curve):
 
     return center_time
 
-def finite_array(values, nan=0.0, posinf=0.0, neginf=0.0) -> np.ndarray:
+def finite_array(values: np.ndarray, nan: float = 0.0, posinf: float = 0.0, neginf: float = 0.0) -> np.ndarray:
     """
     Replace NaN, positive infinity, and negative infinity in an array with specified finite values.
     

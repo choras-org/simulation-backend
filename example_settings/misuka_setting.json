@@ -9,7 +9,8 @@
             "min": 1000,
             "max": 4194304,
             "step": 524288,
-            "default": 1048576
+            "default": 1048576,
+            "description": "Number of rays used for every frequency band in every source-reciever simulation."
         },
         {
             "name": "Maximum Response Length",
@@ -20,7 +21,8 @@
             "max": 20,
             "step": 1.0,
             "default": 10,
-            "endAdornment": "s"
+            "endAdornment": "s",
+            "description": "Length of the simulated IR."
         },
         {
             "name": "Histogram sampling rate",
@@ -31,7 +33,8 @@
             "max": 40000,
             "step": 1000,
             "default": 20000,
-            "endAdornment": "Hz"
+            "endAdornment": "Hz",
+            "description": "Sampling rate of the simulated histogram."
         },
         {
             "name": "Speed of Sound",
@@ -42,27 +45,29 @@
             "max": 360,
             "step": 5,
             "default": 343,
-            "endAdornment": "m/s"
+            "endAdornment": "m/s",
+            "description": "Speed of sound in m/s that is used in simulation."
         },
         {
-            "name": "Limit Dynamic Range to 100dB",
+            "name": "Limit Dynamic Range",
             "id": "dynamic_range_db",
-            "type": "string",
-            "display": "radio",
-            "options": 
-            {
-                "yes": "yes", 
-                "no": "no"
-            },
-            "default": "no"
+            "type": "integer",
+            "display": "text",
+            "min": -1,
+            "max": 250,
+            "step": 20,
+            "default": -1,
+            "endAdornment": "dB",
+            "description": "Using a positive integer input will limit the dynamic range (EDC_max - EDC_min) to that input."
         },
         {
-            "name": "Scattering as [s(125), s(250), s(500), s(1000), s(2000)]",
+            "name": "Scattering",
             "id": "scattering_coefficients",
             "display": "text",
             "type": "string",
             "default": "0.1, 0.1, 0.1, 0.1, 0.1",
-            "endAdornment": ""
+            "endAdornment": "",
+            "description": "Used for controlling scattering on all surface materials for the different frequency bands [s(125), s(250), s(500), s(1000), s(2000)]."
         }
     ],
 

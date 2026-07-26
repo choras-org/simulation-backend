@@ -45,11 +45,11 @@ ENV CMAKE_C_COMPILER_LAUNCHER=ccache
 RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 1
 RUN python3.11 -m pip install --upgrade pip typing_extensions
 
-# Shallow clone of misuka at the pinned commit
+# Shallow clone of misuka from the lgpl branch
 RUN mkdir -p /opt/misuka && cd /opt/misuka && \
     git init && \
     git remote add origin https://github.com/misuka-renderer/misuka.git && \
-    git fetch --depth 1 origin 0362f576f362533ae3c6b94a369381e7dcfb0843 && \
+    git fetch --depth 1 origin lgpl && \
     git checkout FETCH_HEAD && \
     git submodule update --init --recursive --depth 1
 
@@ -58,7 +58,7 @@ RUN --mount=type=cache,target=/root/.ccache \
     cd /opt/misuka && \
     mkdir build && cd build && \
     cmake -GNinja .. \
-        -DMI_DEFAULT_VARIANTS="scalar_rgb;scalar_acoustic;llvm_ad_acoustic" \
+        -DMI_DEFAULT_VARIANTS="scalar_rgb;llvm_ad_rgb;llvm_ad_acoustic" \
         -DCMAKE_BUILD_TYPE=Release \
         -DPython_EXECUTABLE=/usr/bin/python3.11 \
         -DPython3_EXECUTABLE=/usr/bin/python3.11 && \
