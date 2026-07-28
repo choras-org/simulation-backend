@@ -12,8 +12,8 @@
             "description": "Two or more vertices share the same coordinates within tolerance.",
             "compatibility": "warning"
         },
-        "degenerate_face": {
-            "label": "Degenerate face",
+        "zero_area_face": {
+            "label": "Zero area face",
             "description": "A face has zero or near-zero area (collapsed/sliver triangle).",
             "compatibility": "warning"
         },
