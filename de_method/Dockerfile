@@ -9,7 +9,14 @@ RUN apt-get update && apt-get install -y \
     git \
     build-essential \
     gmsh \
+    libgmsh-dev \
+    python3-gmsh \
     && rm -rf /var/lib/apt/lists/*
+
+# Make system python3-gmsh available to the pip environment
+# This creates a symlink so pip-installed packages can import gmsh
+RUN SITE_PACKAGES=$(python -c "import site; print(site.getsitepackages()[0])") && \
+    ln -sf /usr/lib/python3/dist-packages/gmsh* "$SITE_PACKAGES/"
 
 # Copy method package directory
 COPY de_method /app/de_method

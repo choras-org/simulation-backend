@@ -28,7 +28,6 @@ classifiers = [
 ]
 dependencies = [
     "numpy>=1.23.0",
-    "gmsh",
     "pyroomacoustics>=0.8.0",
     "requests",
     "pyfar>=0.8.0",
@@ -51,6 +50,7 @@ tests = [
     "watchdog",
     "ruff",
     "coverage",
+    "gmsh",
 ]
 
 docs = [

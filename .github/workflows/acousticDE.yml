@@ -47,4 +47,4 @@ jobs:
 
       - name: Build Docker Image
         run: |
-          docker build -f de_method/Dockerfile . --platform=linux/amd64 -t de-method-test:latest
+          docker build -f de_method/Dockerfile . -t de-method-test:latest
