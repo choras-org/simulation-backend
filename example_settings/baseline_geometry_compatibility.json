@@ -35,12 +35,12 @@
         "boundary_edge": {
             "label": "Boundary edge",
             "description": "An edge bordered by a single face, indicating a non-watertight surface.",
-            "compatibility": "incompatible"
+            "compatibility": "warning"
         },
         "possible_hole": {
             "label": "Possible hole",
             "description": "A closed loop of boundary edges suggesting a gap in the surface.",
-            "compatibility": "warning"
+            "compatibility": "incompatible"
         },
         "small_face": {
             "label": "Small face",
