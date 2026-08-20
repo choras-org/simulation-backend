@@ -14,7 +14,6 @@
         "max_time": 0.1,
         "sampling_rate": 10000,
         "speed_of_sound": 343,
-        "dynamic_range_db": -1,
         "scattering_coefficients": "0.1, 0.1, 0.1, 0.1, 0.1"
     },
     "results": [

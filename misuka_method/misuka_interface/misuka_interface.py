@@ -17,6 +17,7 @@ logger = logging.getLogger(__name__)
 mi.set_variant("llvm_ad_acoustic")
 
 from .definition import SimulationMethod
+from . import parametric as pra
 
 class misukaMethod(SimulationMethod):
     """Interface class to run the misuka method.
@@ -74,10 +75,11 @@ class misukaMethod(SimulationMethod):
             frequencies = result_container["results"][0]["frequencies"]
             msh_path = result_container["msh_path"]
             absorption_map = result_container["absorption_coefficients"]
-            dynamic_range_limiter = simulation_settings["dynamic_range_db"]
             scattering_str = simulation_settings["scattering_coefficients"]
         except KeyError as e:
             raise KeyError(f"Missing required key in the input JSON file: {e}")
+
+        target_sampling_rate = time_bins
 
         logger.info(f'Using variant: {mi.variant()}')
         logger.info(f'Rendered frequencies: {frequencies}')
@@ -85,7 +87,6 @@ class misukaMethod(SimulationMethod):
         logger.info(f'Input value for maximum response length: {max_time}')
         logger.info(f'Input value for time_bins: {time_bins}')
         logger.info(f'Input value for speed of sound: {speed_of_sound}')
-        logger.info(f'Use dynamic range limiter: {dynamic_range_limiter} (-1 or 0 means no limiter)')
         logger.info(f'Input values for absorption: {absorption_map}')
         
         frequency_range = (float(np.min(frequencies)), float(np.max(frequencies)))
@@ -108,7 +109,6 @@ class misukaMethod(SimulationMethod):
             ]
             for i in range(n_receivers)
         ]
-
         logger.info(f'Source coordinates: {source_coords}\n Reciever coordinates: {receiver_coords}')
 
         # updating percentage of progress
@@ -125,21 +125,27 @@ class misukaMethod(SimulationMethod):
         )
 
         logger.info(f'Integrator Setup: {integrator_acoustic}')
-       
-        # define scene as dictionary
-        scene_dict = {
-            "type": "scene",
-        }
 
-        # Extract physical group information from gmsh
-        scene_dict = build_scene_from_gmsh(
-            scene_dict,
+        # reconstructing filter bank for RIR synthesis from the per-band ETC envelope;
+        # only depends on frequencies/target_sampling_rate, so build it once
+        reflection_filter_bank, _ = pf.dsp.filter.reconstructing_fractional_octave_bands(
+            signal=None,
+            sampling_rate=target_sampling_rate,
+            num_fractions=1,
+            frequency_range=[float(frequencies[0] * 2 ** (-1 / 2)), float(frequencies[-1] * 2 ** (1 / 2))],
+        )
+
+        # Extract physical group information from gmsh; also estimates the room
+        # volume from the same open gmsh session, avoiding a separate
+        # initialize/finalize cycle just for that.
+        scene_dict, room_volume = build_scene_from_gmsh(
             msh_path,
             absorption_map,
             frequencies,
             scattering_str,
         )
-        
+        logger.info(f'Estimated room volume: {room_volume} m^3')
+
         for i_src, source_coord in enumerate(source_coords):
             for i_rec, receiver_coord in enumerate(receiver_coords):
 
@@ -185,18 +191,44 @@ class misukaMethod(SimulationMethod):
                 etc = mi.render(scene, sensor=microphone, integrator=integrator_acoustic,spp=rpf)
                 etc_signal = pf.Signal(etc.numpy().T, sampling_rate=time_bins / max_time, domain='time')
                 etc_signal.time /= np.max(np.abs(etc_signal.time))
+
                 edc = pr.edc.schroeder_integration(etc_signal, is_energy=True)
                 edc_normalized = pf.dsp.normalize(edc)
                 with np.errstate(divide='ignore', invalid='ignore'):
                     edc_normalized_db = 10*np.log10(edc_normalized.time/1e-12)
                 edc_normalized_db = np.squeeze(edc_normalized_db, axis=0)
                 edc_normalized_db = finite_array(edc_normalized_db, nan=0.0, neginf=-100, posinf=100)
-                
-                if dynamic_range_limiter > 0:
-                    limit = np.max(edc_normalized_db) - dynamic_range_limiter
-                    edc_normalized_db[edc_normalized_db<limit] = limit
 
-                result_container["results"][0]["responses"][i_rec]["receiverResults"] = [
+                # Synthesize a broadband RIR from the per-band ETC envelope, following
+                # the reflection-sequence method: reflections arrive as a Poisson
+                # process (rate set by the room volume), get random phase, are
+                # split into octave bands and shaped by the (resampled) ETC envelope.
+                n_samples = int(np.floor(etc_signal.times[-1] * target_sampling_rate))
+                times_target = np.arange(n_samples) / target_sampling_rate
+                etc_time = np.squeeze(etc_signal.time, axis=0)
+                envelope_target = _interpolate_envelope(
+                    etc_signal.times, np.clip(etc_time, 0, None), times_target,
+                )
+
+                times_of_arrival = pra.time_of_arrival_poisson_process(
+                    room_volume, etc_signal.times,
+                    speed_of_sound=speed_of_sound,
+                    reflection_rate_limit=20e3,
+                )
+                reflection_sequence = pra.random_reflection_sequence(
+                    times_of_arrival,
+                    n_samples=n_samples,
+                    sampling_rate=target_sampling_rate,
+                    distribution='binary',  # misuka only needs random phase, not random amplitude
+                )
+                reflection_sequence_bands = reflection_filter_bank.process(reflection_sequence)[1:-1]
+                imp_tot = np.sum(np.squeeze(reflection_sequence_bands.time) * np.sqrt(envelope_target), axis=0)
+
+                # store RIR in results
+                result_container["results"][0]["responses"][i_rec]["receiverResults"] = imp_tot.tolist()
+
+                # store EDC in results
+                result_container["results"][0]["responses"][i_rec]["receiverResultsEDC"] = [
                     {
                         "data": (edc_normalized_db[i_frq]).tolist(),
                         "t": etc_signal.times.tolist(),
@@ -226,12 +258,10 @@ class misukaMethod(SimulationMethod):
                     ts = center_time(edc)*1000 # in ms TODO replace by pyrato 1.1.0 version
                     result_container["results"][0]["responses"][i_rec]["parameters"]['ts'] = np.squeeze(ts).tolist()
 
-
                     spl = np.squeeze(10*np.log10(edc.time[..., 0]/1e-12))
                     spl = finite_array(spl, nan=0.0, neginf=0.0, posinf=0.0)
                     result_container["results"][0]["responses"][i_rec]["parameters"]['spl_t0_freq'] = spl.tolist()
 
-                    
                     edt = np.squeeze(pr.parameters.reverberation_time_linear_regression(edc, 'EDT'))
                     edt = finite_array(edt, nan=0.0, neginf=0.0, posinf=0.0)
                     result_container["results"][0]["responses"][i_rec]["parameters"]['edt'] = edt.tolist()
@@ -244,24 +274,21 @@ class misukaMethod(SimulationMethod):
 
 
 def build_scene_from_gmsh(
-    scene_dict: dict,
     msh_path: str | Path,
     absorption_map: dict,
     frequencies: list,
     scattering_str: str,
-) -> dict:
+) -> tuple[dict, float]:
     """Initialize Gmsh, export physical surfaces to PLY and populate the Mitsuba scene.
 
     This function loads a mesh file using Gmsh, extracts all physical surface groups,
-    exports each surface as a separate PLY file, and populates a Mitsuba scene dictionary
-    with the corresponding material properties (BSDF and geometry). Gmsh is guaranteed
-    to be finalized even if an exception occurs during processing.
+    exports each surface as a separate PLY file, and populates a fresh Mitsuba scene
+    dictionary with the corresponding material properties (BSDF and geometry). It
+    also estimates the room volume from the same open Gmsh session. Gmsh is
+    guaranteed to be finalized even if an exception occurs during processing.
 
     Parameters
     ----------
-    scene_dict : dict
-        Base Mitsuba scene dictionary to populate. Should contain at least
-        `{"type": "scene"}` as a starting point.
     msh_path : str | Path
         Path to the Gmsh mesh file (.msh format) containing physical groups
         defining surfaces.
@@ -284,6 +311,9 @@ def build_scene_from_gmsh(
         references for all physical surfaces. The dictionary includes keys like:
         `bsdf_0`, `bsdf_1`, ... for material properties and
         `shape_0`, `shape_1`, ... for geometry references.
+    float
+        Volume of the room in the same units as the mesh coordinates, computed
+        from the closed surface mesh (see `compute_mesh_volume`).
 
     Raises
     ------
@@ -304,18 +334,21 @@ def build_scene_from_gmsh(
     --------
     >>> import json
     >>> from pathlib import Path
-    >>> scene_base = {"type": "scene"}
     >>> msh_file = Path("room.msh")
     >>> absorption = {"Wall": "0.2, 0.2, 0.3, 0.3, 0.4, 0.4", "Floor": "0.1, 0.1, 0.15, 0.15, 0.2, 0.2"}
     >>> freq = [125, 250, 500, 1000, 2000, 4000]
     >>> scatter_spec = [(125, 0.05), (250, 0.05), (500, 0.1), (1000, 0.1), (2000, 0.15), (4000, 0.15)]
-    >>> result = build_scene_from_gmsh(scene_base, msh_file, absorption, freq, scatter_spec)
+    >>> result, volume = build_scene_from_gmsh(msh_file, absorption, freq, scatter_spec)
     >>> "bsdf_0" in result
     True
     """
+    scene_dict = {
+        "type": "scene",
+    }
     try:
         gmsh.initialize()
         gmsh.open(str(msh_path))
+        room_volume = volume_from_msh(msh_path)
         surfaces = gmsh.model.getPhysicalGroups(2)
 
         ply_dir = Path(msh_path).parent
@@ -367,7 +400,7 @@ def build_scene_from_gmsh(
                 "bsdf": {"type": "ref", "id": f"bsdf_{i}"},
             }
 
-        return scene_dict
+        return scene_dict, room_volume
     except Exception as exc:
         logger.exception("Failed to build Mitsuba scene from geometry '%s'.", msh_path)
         raise RuntimeError(f"Failed to build Mitsuba scene from geometry '{msh_path}'.") from exc
@@ -403,7 +436,7 @@ def set_progress_and_save(percentage: int, result_container: dict, json_file_pat
     result.pop("percentages", None)
     # Save the updated JSON
     with open(json_file_path, "w") as json_output:
-        json_output.write(json.dumps(result_container, 
+        json_output.write(json.dumps(result_container,
                                      indent=4,
                                      allow_nan=False
                                      ))
@@ -621,10 +654,36 @@ def center_time(energy_decay_curve: pf.TimeData) -> np.ndarray:
 
     return center_time
 
+def _interpolate_envelope(
+    times_source: np.ndarray, envelope_source: np.ndarray, times_target: np.ndarray
+) -> np.ndarray:
+    """Linearly interpolate a per-band, non-negative energy envelope to new time samples.
+
+    Uses linear interpolation (rather than e.g. spline) to avoid negative values.
+
+    Parameters
+    ----------
+    times_source : np.ndarray, shape (n_times_source,)
+        Time samples at which `envelope_source` is defined.
+    envelope_source : np.ndarray, shape (n_bands, n_times_source)
+        Per-band energy envelope.
+    times_target : np.ndarray, shape (n_times_target,)
+        Time samples to interpolate to.
+
+    Returns
+    -------
+    np.ndarray, shape (n_bands, n_times_target)
+        Interpolated, non-negative envelope.
+    """
+    envelope_target = np.zeros((envelope_source.shape[0], times_target.shape[0]))
+    for i in range(envelope_source.shape[0]):
+        envelope_target[i] = np.interp(times_target, times_source, envelope_source[i])
+    return np.clip(envelope_target, 0, None)
+
 def finite_array(values: np.ndarray, nan: float = 0.0, posinf: float = 0.0, neginf: float = 0.0) -> np.ndarray:
     """
     Replace NaN, positive infinity, and negative infinity in an array with specified finite values.
-    
+
     Parameters
     ----------
     values : array-like
@@ -647,3 +706,96 @@ def finite_array(values: np.ndarray, nan: float = 0.0, posinf: float = 0.0, negi
         posinf=posinf,
         neginf=neginf,
     )
+
+def compute_mesh_volume(vertices, faces):
+    """
+    Compute the volume of a closed triangulated mesh.
+
+    Parameters
+    ----------
+    vertices : array-like, shape (N, 3)
+        XYZ coordinates of mesh vertices.
+    faces : array-like, shape (M, 3)
+        Triangle faces as 0-based indices into ``vertices``.
+
+    Returns
+    -------
+    float
+        Volume of the mesh in the same units as ``vertices``.
+
+    Notes
+    -----
+    Uses the signed tetrahedron (divergence theorem) method. Each face
+    contributes a signed tetrahedron volume from the origin::
+
+        V = (1/6) * |sum_i  v0_i · (v1_i × v2_i)|
+
+    The mesh must be closed (watertight) and faces must be consistently
+    oriented (all outward- or all inward-facing normals) for the result
+    to be correct.
+    """
+    v = np.asarray(vertices, dtype=np.float64)
+    f = np.asarray(faces, dtype=np.intp)
+
+    v0 = v[f[:, 0]]
+    v1 = v[f[:, 1]]
+    v2 = v[f[:, 2]]
+
+    # Scalar triple product: v0 · (v1 × v2), vectorized over all faces
+    signed_volumes = np.einsum("ij,ij->i", v0, np.cross(v1, v2))
+
+    return float(np.abs(signed_volumes.sum()) / 6.0)
+
+def read_gmsh_mesh(path):
+    """
+    Read a Gmsh .msh file and return vertices and triangular faces.
+
+    Parameters
+    ----------
+    path : str or path-like
+        Path to a Gmsh .msh file.
+
+    Returns
+    -------
+    vertices : np.ndarray, shape (N, 3)
+        XYZ coordinates of all mesh vertices.
+    faces : np.ndarray, shape (M, 3)
+        Triangle faces as 0-based indices into ``vertices``.
+        Other element types (quads, tetrahedra) are ignored.
+
+    Notes
+    -----
+    Requires gmsh to be initialized before calling. Leaves the opened
+    model in gmsh's session; call ``gmsh.clear()`` afterwards if needed.
+    """
+    gmsh.open(str(path))
+
+    _, coords, _ = gmsh.model.mesh.getNodes()
+    vertices = coords.reshape(-1, 3)
+
+    # careful: triangles only (element type 2); quads/tets ignored
+    _, node_tags = gmsh.model.mesh.getElementsByType(2)
+    faces = node_tags.reshape(-1, 3) - 1  # gmsh node tags are 1-based
+
+    return vertices, faces.astype(np.intp)
+
+def volume_from_msh(path):
+    """
+    Read a Gmsh .msh file and return the volume of the closed surface mesh.
+
+    Parameters
+    ----------
+    path : str or path-like
+        Path to a Gmsh .msh file containing a closed (watertight) surface mesh.
+
+    Returns
+    -------
+    float
+        Volume of the mesh in the same units as the mesh coordinates.
+
+    Notes
+    -----
+    Convenience wrapper around `read_gmsh_mesh` and `compute_mesh_volume`.
+    See `compute_mesh_volume` for correctness requirements on mesh orientation.
+    """
+    return compute_mesh_volume(*read_gmsh_mesh(path))

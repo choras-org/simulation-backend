@@ -49,18 +49,6 @@
             "description": "Speed of sound in m/s that is used in simulation."
         },
         {
-            "name": "Limit Dynamic Range",
-            "id": "dynamic_range_db",
-            "type": "integer",
-            "display": "text",
-            "min": -1,
-            "max": 250,
-            "step": 20,
-            "default": -1,
-            "endAdornment": "dB",
-            "description": "Using a positive integer input will limit the dynamic range (EDC_max - EDC_min) to that input."
-        },
-        {
             "name": "Scattering",
             "id": "scattering_coefficients",
             "display": "text",
