@@ -237,8 +237,23 @@ class PyroomacousticsMethod(SimulationMethod):
 
         bands = self._get_result_data()['frequencies']
 
+        rir_signal = pf.Signal(rir, simulation_setup.fs)
+
+        # pyroomacoustics uses a fractional delay filter to create
+        # sub-sample accurate RIRs. The rir is always delayed by
+        # half the length of the fractional delay filter.
+        # To compensate for this and ensure physically plausible
+        # propagation delays, the RIR is shifted back.
+        pra_frac_delay = pra.constants.get("frac_delay_length") // 2
+
+        # Cyclic time shift. May introduce non-causal components
+        # if source and receiver are very close.
+        rir_signal = pf.dsp.time_shift(
+            rir_signal, -pra_frac_delay, unit="samples",
+        )
+
         rap = calculate_room_acoustic_parameters(
-            pf.Signal(rir, simulation_setup.fs),
+            rir_signal,
             bands=bands,
         )
 
