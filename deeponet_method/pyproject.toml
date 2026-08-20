@@ -1,0 +1,123 @@
+[project]
+name = "deeponet_interface"
+version = "0.1.0"
+description = "Deep Operator Networks (DeepONets) for simulating sound propagation in 3D scenes enabling generating impulse responses in real-time for arbitrary source/receiver pairs. Based on the PNAS paper: 'Sound Propagation in Realistic Interactive 3D Scenes with Parameterized Sources Using Deep Neural Operators' by Borrel-Jensen et al."
+requires-python = ">=3.11"
+authors = [
+    { name = "Nikolas Borrel-Jensen", email = "nikolasborrel@gmail.com" },
+]
+keywords = [
+
+    "acoustic simulation",
+
+    "scientific machine learning",
+
+    "neural operator",
+
+    "real-time",
+
+]
+
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Natural Language :: English",
+    "Programming Language :: Python :: 3",
+
+    "Programming Language :: Python :: 3.11",
+
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+
+    "Programming Language :: Python :: 3.14",
+
+]
+dependencies = [
+    # gmsh has no linux aarch64 pip wheel; on arm64 it is provided by the apt
+    # `python3-gmsh` package (see Dockerfile). Keep the pip wheel on x86_64.
+    "gmsh ; platform_machine == 'x86_64'",
+    "numpy",
+    "h5py",
+    "scipy",
+    "requests",
+    "deeponet_acoustics @ git+https://github.com/dtu-act/deeponet-acoustic-wave-prop.git@v0.3.1",
+    "dg_interface",
+]
+
+[tool.uv]
+# numpy>=2.0: override acousticDE's numpy<2.0 pin (deeponet_acoustics needs >=2.0 via jax).
+# gmsh marker: edg-acoustics and acousticDE require gmsh unconditionally, but gmsh has
+# no linux aarch64 wheel. This override rewrites the requirement tree-wide so gmsh is
+# only pulled on x86_64; on arm64 the apt `python3-gmsh` package provides it.
+override-dependencies = [
+    "numpy>=2.0",
+    "gmsh ; platform_machine == 'x86_64'",
+]
+# tensorboard-plugin-profile 2.22.2 ships only macOS/Windows wheels (no linux), which
+# breaks arm64 (and amd64) linux builds. 2.22.1 is pure-python and works everywhere;
+# it's a profiling plugin we never invoke, so pin it down.
+constraint-dependencies = ["tensorboard-plugin-profile==2.22.1"]
+# unsafe-best-match: the pytorch-cpu index carries setuptools capped at 70.2.0, too old
+# to parse smt's PEP 639 SPDX license when it builds from source on arm64. With the
+# default first-match strategy uv would use that old setuptools for all source builds.
+# best-match lets setuptools resolve from PyPI (>=77) while the torch sources binding
+# below still keeps torch on the CPU-only index.
+index-strategy = "unsafe-best-match"
+# Ensure the lockfile has Linux x86_64 wheels for the Docker/cloud target.
+required-environments = ["sys_platform == 'linux' and platform_machine == 'x86_64'"]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+
+[tool.uv.sources]
+dg_interface = { path = "../dg_method", editable = true }
+# JAX handles GPU compute; torch is only imported for DataLoader/SummaryWriter
+# on code paths we never execute. Use CPU-only torch everywhere to save ~2 GB.
+torch = { index = "pytorch-cpu" }
+
+[project.optional-dependencies]
+deploy = [
+    "twine",
+    "wheel",
+    "build",
+    "setuptools",
+    "bump-my-version",
+]
+
+tests = [
+    "pytest",
+    "pytest-cov",
+    "watchdog",
+    "ruff",
+    "coverage",
+]
+
+docs = [
+    "sphinx",
+    "autodocsumm>=0.2.14",
+    "pydata-sphinx-theme",
+    "sphinx_mdinclude",
+    "sphinx-design",
+    "sphinx-favicon",
+    "sphinx-reredirects",
+]
+
+dev = [
+    "deeponet_interface[deploy,tests,docs]",
+    "setuptools>=65,<80",  # pkg_resources for tensorboard's startup
+]
+
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["deeponet_interface"]
+
+[project.scripts]
+deeponet_interface = "deeponet_interface:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

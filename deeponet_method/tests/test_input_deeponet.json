@@ -1,0 +1,124 @@
+{
+    "geo_path": "test_room_deeponet.geo",
+    "msh_path": "test_room_deeponet.msh",
+    "absorption_coefficients": {
+        "floor": "0.6, 0.69, 0.71, 0.7, 0.63",
+        "wall1": "0.6, 0.69, 0.71, 0.7, 0.63",
+        "ceiling": "0.6, 0.69, 0.71, 0.7, 0.63",
+        "wall2": "0.6, 0.69, 0.71, 0.7, 0.63",
+        "wall3": "0.6, 0.69, 0.71, 0.7, 0.63",
+        "wall4": "0.6, 0.69, 0.71, 0.7, 0.63"
+    },
+    "simulationSettings": {
+        "fmax": 200,
+        "c0": 343,
+        "ir_length": 0.05,
+
+        "iterations": 1000,
+        "decay_steps": 2000,
+        "decay_rate": 0.90,
+        "learning_rate": 1e-3,
+        "optimizer": "adam",
+
+        "__comment1__": "total batch_size is a multiple of branch and coordinate sizes",
+        "batch_size_branch": 64,
+        "batch_size_coord": 1000,
+
+        "bn_architecture": "mod-mlp",
+        "bn_activation": "sin",
+        "bn_num_hidden_layers": 3,
+        "bn_num_hidden_neurons": 512,
+
+        "tn_architecture": "mod-mlp",
+        "tn_activation": "sin",
+        "tn_num_hidden_layers": 3,
+        "tn_num_hidden_neurons": 512,
+
+        "num_output_neurons": 100
+    },
+    "results": [
+        {
+            "simulationMethodId": 1,
+            "resultType": "IR",
+            "simulationId": 1,
+            "sourceX": 0.4,
+            "sourceY": 1.0,
+            "sourceZ": 1.2,
+            "frequencies": [
+                125,
+                250,
+                500,
+                1000,
+                2000,
+                4000
+            ],
+            "percentage": 0,
+            "responses": [
+                {
+                    "responseId": 1,
+                    "x": 1.0,
+                    "y": 1.0,
+                    "z": 1.1,
+                    "parameters": {
+                        "edt": [],
+                        "t20": [],
+                        "t30": [],
+                        "c80": [],
+                        "d50": [],
+                        "ts": [],
+                        "spl_t0_freq": []
+                    },
+                    "receiverResults": []
+                },
+                {
+                    "responseId": 2,
+                    "x": 0.5,
+                    "y": 1.0,
+                    "z": 1.5,
+                    "parameters": {
+                        "edt": [],
+                        "t20": [],
+                        "t30": [],
+                        "c80": [],
+                        "d50": [],
+                        "ts": [],
+                        "spl_t0_freq": []
+                    },
+                    "receiverResults": []
+                },
+                {
+                    "responseId": 3,
+                    "x": 1.0,
+                    "y": 0.9,
+                    "z": 0.5,
+                    "parameters": {
+                        "edt": [],
+                        "t20": [],
+                        "t30": [],
+                        "c80": [],
+                        "d50": [],
+                        "ts": [],
+                        "spl_t0_freq": []
+                    },
+                    "receiverResults": []
+                },
+                {
+                    "responseId": 4,
+                    "x": 0.5,
+                    "y": 0.5,
+                    "z": 0.5,
+                    "parameters": {
+                        "edt": [],
+                        "t20": [],
+                        "t30": [],
+                        "c80": [],
+                        "d50": [],
+                        "ts": [],
+                        "spl_t0_freq": []
+                    },
+                    "receiverResults": []
+                }
+            ]
+        }
+    ]
+}
