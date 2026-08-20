@@ -28,8 +28,6 @@ def main() -> None:
         # was successful or not.
         sys.exit(1)
 
-    de_method_object.run_simulation()
-
     # Save the results to a separate file
     de_method_object.save_results()
 
