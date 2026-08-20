@@ -227,16 +227,6 @@ class PyroomacousticsMethod(SimulationMethod):
 
         # Get the RIRs for the first source and first microphone
         rir = simulation_setup.rir[0][0]
-
-        # Export the RIRs to the input data structure
-        self._export_rir_to_input(rir)
-        self._write_progress(90)
-
-        self.export_rir_to_csv()
-        self._write_progress(95)
-
-        bands = self._get_result_data()['frequencies']
-
         rir_signal = pf.Signal(rir, simulation_setup.fs)
 
         # pyroomacoustics uses a fractional delay filter to create
@@ -251,6 +241,15 @@ class PyroomacousticsMethod(SimulationMethod):
         rir_signal = pf.dsp.time_shift(
             rir_signal, -pra_frac_delay, unit="samples",
         )
+
+        # Export the RIRs to the input data structure
+        self._export_rir_to_input(np.squeeze(rir_signal.time))
+        self._write_progress(90)
+
+        self.export_rir_to_csv()
+        self._write_progress(95)
+
+        bands = self._get_result_data()['frequencies']
 
         rap = calculate_room_acoustic_parameters(
             rir_signal,
