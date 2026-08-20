@@ -16,7 +16,7 @@
         },
         {
             "name": "Energy decay threshold",
-            "description": "The energy decay threshold for determining the simulation length. Once the energy decays below this threshold, the simulation will terminate.",
+            "description": "The energy decay threshold for determining the simulation length. Once the energy decays below this threshold, the simulation will terminate. (Only used if 'Simulation length' is set to 'EDT'.)",
             "id": "edt",
             "type": "integer",
             "display": "text",
@@ -28,7 +28,7 @@
         },
         {
             "name": "Impulse response length",
-            "description": "The maximum length of the impulse response to be simulated.",
+            "description": "The maximum length of the impulse response to be simulated. (Only used if 'Simulation length' is set to 'IR length'.)",
             "id": "de_ir_length",
             "type": "float",
             "display": "text",
@@ -40,7 +40,7 @@
         },
         {
             "name": "Speed of sound",
-            "description": "Speed of sound in air filling the room.",
+            "description": "Speed of sound in the room.",
             "id": "de_c0",
             "type": "float",
             "display": "text",
@@ -52,7 +52,7 @@
         },
         {
             "name": "Characteristic length (mesh)",
-            "description": "Characteristic length of the mesh used in the simulation.",
+            "description": "Characteristic length of the mesh used in the simulation, i.e. the average edge length of mesh elements.",
             "id": "de_lc",
             "type": "float",
             "display": "text",
