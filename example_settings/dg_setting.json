@@ -3,7 +3,7 @@
     "options": [
         {
             "name": "Freq. upper limit",
-            "description": "Upper frequency limit up to which the spectrum will be simulated.",
+            "description": "Upper frequency limit up to which the spectrum will be simulated. Note that this significantly affects the simulation time.",
             "id": "dg_freq_upper_limit",
             "type": "integer",
             "display": "text",
@@ -15,7 +15,7 @@
         },
         {
             "name": "Speed of sound",
-            "description": "Speed of sound in air filling the room.",
+            "description": "Speed of sound in the room.",
             "id": "dg_c0",
             "type": "float",
             "display": "text",
@@ -27,7 +27,7 @@
         },
         {
             "name": "Air density",
-            "description": "Density of air filling the room.",
+            "description": "Density of air in the room.",
             "id": "dg_rho0",
             "type": "float",
             "display": "text",
