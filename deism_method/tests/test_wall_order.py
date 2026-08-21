@@ -1,4 +1,4 @@
-"""Regression tests for wall-surface ordering (issues.md #2).
+"""Regression tests for wall-surface ordering.
 
 CHORAS rooms take DEISM's convex/ARG path, which re-matches each wall to its
 absorption value by centroid proximity. ``get_deism_surface_order`` must
@@ -68,7 +68,7 @@ def test_fewer_than_four_surfaces_raises():
 
 
 def test_non_hexahedral_convex_rooms_accepted():
-    """Convex rooms need not have 6 walls (issues.md C2).
+    """Convex rooms need not have 6 walls.
 
     DEISM's convex/ARG path accepts any wall count M >= 4; the wrapper must
     not impose a shoebox-like 6-wall requirement.
