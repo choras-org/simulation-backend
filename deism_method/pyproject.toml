@@ -1,0 +1,77 @@
+[project]
+name = "deism_interface"
+version = "0.1.0"
+description = "Python package for DEISM (image-source) acoustic simulation."
+requires-python = ">=3.11"
+authors = [
+    { name = "The CHORAS developers" },
+    { name = "Zeyu Xu" },
+]
+keywords = [
+    "image-source-method",
+    "acoustic simulation",
+    "geometrical acoustics",
+]
+
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+    "Natural Language :: English",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+]
+dependencies = [
+    "numpy>=1.23.0",
+    "matplotlib",
+    "requests",
+    "gmsh",
+    "deism==2.2.1.15",
+]
+
+[project.optional-dependencies]
+deploy = [
+    "twine",
+    "wheel",
+    "build",
+    "setuptools",
+    "bump-my-version",
+]
+
+tests = [
+    "pytest",
+    "pytest-cov",
+    "watchdog",
+    "ruff",
+    # deism==2.2.1.15 pulls numba 0.66.0, whose coverage_support needs
+    # coverage.types.Tracer (added in coverage 7.6.1). Older coverage breaks
+    # `import deism` at test collection.
+    "coverage>=7.6.1",
+]
+
+docs = [
+    "sphinx",
+    "autodocsumm>=0.2.14",
+    "pydata-sphinx-theme",
+    "sphinx_mdinclude",
+    "sphinx-design",
+    "sphinx-favicon",
+    "sphinx-reredirects",
+]
+
+dev = ["deism_interface[deploy,tests,docs]"]
+
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["deism_interface"]
+
+[tool.setuptools.package-data]
+deism_interface = ["examples/*.yml"]
+
+[project.scripts]
+deism_interface = "deism_interface:main"
