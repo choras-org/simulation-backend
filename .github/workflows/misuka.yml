@@ -1,0 +1,26 @@
+name: misuka Method CI
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+    branches:
+      - "**"
+  push:
+    branches:
+      - "**"
+
+jobs:
+  build-docker-image:
+    name: Build misuka Docker image
+    runs-on: ubuntu-latest
+    continue-on-error: true
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Build Docker Image
+        run: |
+          docker build -f misuka_method/Dockerfile . --platform=linux/amd64 -t misuka-method-test:latest
