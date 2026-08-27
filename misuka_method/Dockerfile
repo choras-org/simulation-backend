@@ -16,7 +16,12 @@ RUN wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key | tee /etc/apt/trusted.
     echo "deb http://apt.llvm.org/jammy/ llvm-toolchain-jammy-17 main" \
     > /etc/apt/sources.list.d/llvm.list
 
-RUN add-apt-repository ppa:deadsnakes/ppa && \
+RUN for i in 1 2 3 4 5; do \
+        add-apt-repository ppa:deadsnakes/ppa && break; \
+        echo "add-apt-repository failed (attempt $i/5), retrying in $((i*5))s..." >&2; \
+        sleep $((i*5)); \
+        [ "$i" = "5" ] && exit 1; \
+    done && \
     apt-get update && apt-get install -y \
     python3.11 \
     python3.11-dev \
@@ -83,7 +88,12 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update && apt-get install -y \
     software-properties-common ca-certificates gnupg wget lsb-release && \
-    add-apt-repository ppa:deadsnakes/ppa && \
+    for i in 1 2 3 4 5; do \
+        add-apt-repository ppa:deadsnakes/ppa && break; \
+        echo "add-apt-repository failed (attempt $i/5), retrying in $((i*5))s..." >&2; \
+        sleep $((i*5)); \
+        [ "$i" = "5" ] && exit 1; \
+    done && \
     wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key | tee /etc/apt/trusted.gpg.d/apt.llvm.org.asc && \
     echo "deb http://apt.llvm.org/jammy/ llvm-toolchain-jammy-17 main" > /etc/apt/sources.list.d/llvm.list && \
     apt-get update && apt-get install -y \
