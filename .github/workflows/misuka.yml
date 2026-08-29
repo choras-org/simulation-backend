@@ -35,7 +35,6 @@ jobs:
 
       - name: Build Docker Image
         id: docker_build
-        continue-on-error: true
         run: |
           docker buildx build -f misuka_method/Dockerfile . \
             --platform=${{ matrix.platform }} \
