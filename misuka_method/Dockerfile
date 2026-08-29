@@ -120,7 +120,8 @@ COPY --from=builder /opt/misuka_python /opt/misuka_python
 
 ENV LD_LIBRARY_PATH="/opt/misuka/build"
 ENV PYTHONPATH="/opt/misuka_python:/opt/misuka/build/python:/usr/lib/python3/dist-packages"
-ENV DRJIT_LIBLLVM_PATH="/usr/lib/x86_64-linux-gnu/libLLVM-17.so"
+RUN ln -sf $(find /usr/lib -name "libLLVM-17.so" | head -1) /usr/local/lib/libLLVM-17.so
+ENV DRJIT_LIBLLVM_PATH="/usr/local/lib/libLLVM-17.so"
 
 WORKDIR /app/misuka_method
 CMD ["python3.11", "-m", "misuka_interface"]
