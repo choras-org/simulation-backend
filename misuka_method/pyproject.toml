@@ -30,8 +30,8 @@ dependencies = [
     "requests",
     "gmsh",
     "meshio",
-    "pyfar",
-    "pyrato",
+    "pyfar<0.10.0",
+    "pyrato>=1.0.0",
     "pandas",
 ]
 

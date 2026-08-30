@@ -76,8 +76,8 @@ RUN python3.11 -m pip install --target=/opt/misuka_python \
         numpy \
         requests \
         meshio \
-        pyfar \
-        pyrato \
+        'pyfar<0.10.0' \
+        'pyrato>=1.0.0' \
         pandas && \
     python3.11 -m pip install --no-deps --target=/opt/misuka_python /app/misuka_method
 
