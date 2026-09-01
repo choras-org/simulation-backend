@@ -3,10 +3,16 @@
     "method": "Pyroomacoustics",
     "notes": "Example notes",
     "issues": {
-        "boundary_edge": {
-            "compatibility": "warning"
-        },
         "possible_hole": {
+            "compatibility": "incompatible"
+        },
+        "t_junction": {
+            "compatibility": "incompatible"
+        },
+        "intersection": {
+            "compatibility": "incompatible"
+        },
+        "overlapping_face": {
             "compatibility": "incompatible"
         }
     }

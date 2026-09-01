@@ -3,10 +3,16 @@
     "method": "DE",
     "notes": "The Diffusion Equation solver meshes an enclosed volume, so the surface must be watertight, but it is tolerant of non-planar faces because they are retriangulated during volume meshing.",
     "issues": {
-        "boundary_edge": {
-            "compatibility": "warning"
-        },
         "possible_hole": {
+            "compatibility": "incompatible"
+        },
+        "t_junction": {
+            "compatibility": "incompatible"
+        },
+        "intersection": {
+            "compatibility": "incompatible"
+        },
+        "overlapping_face": {
             "compatibility": "incompatible"
         }
     }

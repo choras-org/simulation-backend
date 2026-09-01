@@ -25,12 +25,12 @@
         "t_junction": {
             "label": "T-junction",
             "description": "A vertex lies on the interior of another face's edge, breaking edge connectivity.",
-            "compatibility": "incompatible"
+            "compatibility": "warning"
         },
         "intersection": {
             "label": "Self-intersection",
             "description": "Faces intersect each other, violating a piecewise-linear-complex (PLC).",
-            "compatibility": "incompatible"
+            "compatibility": "warning"
         },
         "boundary_edge": {
             "label": "Boundary edge",
@@ -40,7 +40,7 @@
         "possible_hole": {
             "label": "Possible hole",
             "description": "A closed loop of boundary edges suggesting a gap in the surface.",
-            "compatibility": "incompatible"
+            "compatibility": "warning"
         },
         "small_face": {
             "label": "Small face",
@@ -55,7 +55,7 @@
         "overlapping_face": {
             "label": "Overlapping faces",
             "description": "Two or more faces occupy the same space, causing potential simulation issues.",
-            "compatibility": "incompatible"
+            "compatibility": "warning"
         }
     }
 }
