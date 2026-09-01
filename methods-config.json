@@ -51,6 +51,7 @@
         "label": "misuka",
         "entryFile":"misukaInterface.py",
         "settings":"misuka_setting.json",
+        "geometryCompatibility":"misuka_method/geometry_compatibility.json",
         "repositoryURL":"https://github.com/misuka-renderer/misuka.git",
         "documentationURL":"https://www.tu.berlin/en/ak/research/projects/differentiable-acoustic-path-tracing"
     },
@@ -60,6 +61,7 @@
         "envVars": {},
         "label": "sparrowpy",
         "settings":"sparrowpy_setting.json",
+        "geometryCompatibility":"sparrowpy_method/geometry_compatibility.json",
         "entryFile":"sparrowpy_interface.py",
         "repositoryURL":"https://github.com/sparrow-acoustics/sparrowpy",
         "documentationURL":"https://sparrowpy.readthedocs.io/en/stable"

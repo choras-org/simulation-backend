@@ -1,0 +1,7 @@
+{
+    "extends": "choras-baseline",
+    "method": "Sparrowpy",
+    "notes": "Sound Propagation with Acoustic Radiosity for Realistic Outdoor Worlds.",
+    "issues": {
+    }
+}
