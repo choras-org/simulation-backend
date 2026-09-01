@@ -5,6 +5,8 @@
         "envVars": {"CUDA_VISIBLE_DEVICES": "0"},
         "label": "Discontinuous Galerkin method",
         "settings":"dg_setting.json",
+        "geometryCompatibility":"dg_method/geometry_compatibility.json",
+        "methodValidation":"dg_method/dg_interface/validation.py",
         "entryFile":"DGinterface.py",
         "repositoryURL":"https://github.com/Building-acoustics-TU-Eindhoven/edg-acoustics/",
         "documentationURL":"https://dg-roomacoustics.readthedocs.io/en/latest/"
@@ -15,9 +17,21 @@
         "envVars": {},
         "label": "Diffusion Equation method",
         "settings":"de_setting.json",
+        "geometryCompatibility":"de_method/geometry_compatibility.json",
+        "methodValidation":"de_method/de_interface/validation.py",
         "entryFile":"DEinterface.py",
         "repositoryURL":"https://github.com/Building-acoustics-TU-Eindhoven/acousticDE/",
         "documentationURL":"https://building-acoustics-tu-eindhoven.github.io/acousticDE/index.html"
+    },
+    {
+        "simulationType": "MyNewMethod",
+        "containerImage": "mynewmethod_image:latest", 
+        "envVars": {},
+        "label": "My New Method",
+        "entryFile":"MyNewMethodInterface.py",
+        "settings":"my_new_setting.json",
+        "repositoryURL":"",
+        "documentationURL":""
     },
     {
         "simulationType": "Pyroomacoustics",
@@ -25,6 +39,7 @@
         "envVars": {},
         "label": "Pyroomacoustics",
         "settings": "pyroomacoustics_setting.json",
+        "geometryCompatibility": "pyroomacoustics_method/geometry_compatibility.json",
         "entryFile": "__main__.py",
         "repositoryURL": "https://github.com/LCAV/pyroomacoustics",
         "documentationURL": "https://pyroomacoustics.readthedocs.io"
@@ -36,6 +51,7 @@
         "label": "misuka",
         "entryFile":"misukaInterface.py",
         "settings":"misuka_setting.json",
+        "geometryCompatibility":"misuka_method/geometry_compatibility.json",
         "repositoryURL":"https://github.com/misuka-renderer/misuka.git",
         "documentationURL":"https://www.tu.berlin/en/ak/research/projects/differentiable-acoustic-path-tracing"
     },
@@ -45,6 +61,7 @@
         "envVars": {},
         "label": "sparrowpy",
         "settings":"sparrowpy_setting.json",
+        "geometryCompatibility":"sparrowpy_method/geometry_compatibility.json",
         "entryFile":"sparrowpy_interface.py",
         "repositoryURL":"https://github.com/sparrow-acoustics/sparrowpy",
         "documentationURL":"https://sparrowpy.readthedocs.io/en/stable"

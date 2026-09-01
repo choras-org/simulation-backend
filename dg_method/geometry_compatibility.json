@@ -1,0 +1,19 @@
+{
+    "extends": "choras-baseline",
+    "method": "DG",
+    "notes": "Discontinuous Galerkin is a wave-based solver requiring a watertight, manifold, planar-faceted PLC. It copies the CHORAS baseline and tightens mesh-quality issues that the baseline only warns about.",
+    "issues": {
+        "possible_hole": {
+            "compatibility": "incompatible"
+        },
+        "t_junction": {
+            "compatibility": "incompatible"
+        },
+        "intersection": {
+            "compatibility": "incompatible"
+        },
+        "overlapping_face": {
+            "compatibility": "incompatible"
+        }
+    }
+}

@@ -1,0 +1,61 @@
+{
+    "version": 1,
+    "description": "CHORAS default geometry-issue compatibility baseline. Every simulation method inherits this list. A method may ship its own override file (referenced by 'geometryCompatibility' in methods-config.json) that copies these entries and overrides only the fields that differ. The override is merged on top of this baseline per issue kind.",
+    "compatibilityLevels": {
+        "compatible": "The issue does not affect this simulation method; the geometry can be used as-is.",
+        "warning": "The issue is tolerated but may reduce accuracy or require review.",
+        "incompatible": "The issue breaks this simulation method and must be repaired before running."
+    },
+    "issues": {
+        "duplicate_vertex": {
+            "label": "Duplicate vertex",
+            "description": "Two or more vertices share the same coordinates within tolerance.",
+            "compatibility": "warning"
+        },
+        "zero_area_face": {
+            "label": "Zero area face",
+            "description": "A face has zero or near-zero area (collapsed/sliver triangle).",
+            "compatibility": "warning"
+        },
+        "non_planar_face": {
+            "label": "Non-planar face",
+            "description": "A polygon face whose vertices do not lie on a single plane.",
+            "compatibility": "warning"
+        },
+        "t_junction": {
+            "label": "T-junction",
+            "description": "A vertex lies on the interior of another face's edge, breaking edge connectivity.",
+            "compatibility": "warning"
+        },
+        "intersection": {
+            "label": "Self-intersection",
+            "description": "Faces intersect each other, violating a piecewise-linear-complex (PLC).",
+            "compatibility": "warning"
+        },
+        "boundary_edge": {
+            "label": "Boundary edge",
+            "description": "An edge bordered by a single face, indicating a non-watertight surface.",
+            "compatibility": "warning"
+        },
+        "possible_hole": {
+            "label": "Possible hole",
+            "description": "A closed loop of boundary edges suggesting a gap in the surface.",
+            "compatibility": "warning"
+        },
+        "small_face": {
+            "label": "Small face",
+            "description": "A face whose area is below the recommended size threshold.",
+            "compatibility": "warning"
+        },
+        "collinear_face": {
+            "label": "Collinear face",
+            "description": "A face whose vertices are collinear or nearly collinear (collapsed to a line).",
+            "compatibility": "warning"
+        },
+        "overlapping_face": {
+            "label": "Overlapping faces",
+            "description": "Two or more faces occupy the same space, causing potential simulation issues.",
+            "compatibility": "warning"
+        }
+    }
+}

@@ -1,0 +1,7 @@
+{
+    "extends": "choras-baseline",
+    "method": "Misuka",
+    "notes": "Misuka is a research-focused room acoustic renderer for forward and inverse sound transport simulation, developed in collaboration between the Audio Communication Group and the Computer Graphics Group at TU Berlin.",
+    "issues": {
+    }
+}
