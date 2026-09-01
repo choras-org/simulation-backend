@@ -1,16 +1,17 @@
 [project]
-name = "dg_interface"
+name = "sparrowpy_interface"
 version = "0.1.0"
-description = "Python package for DG acoustic simulation."
-requires-python = ">=3.11,<3.14"
+description = "Sound Propagation with Acoustic Radiosity for Realistic Outdoor Worlds"
+requires-python = ">=3.11,<3.15"
 authors = [
-    { name = 'The CHORAS developers' },
-    { name = "Silvin Willemsen", email = "s.willemsen@tue.nl" },
+    { name = "Anne Heimes", email = "ahe@akustik.rwth-aachen.de" },
 ]
 keywords = [
-    "discontinuous-galerkin",
     "acoustic simulation",
     "geometrical acoustics",
+    "acoustic radiance transfer",
+    "brdf",
+    "scattering",
 ]
 
 classifiers = [
@@ -22,16 +23,16 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
 ]
 dependencies = [
-    "pandas>=2.2.0",
     "numpy>=1.23.0",
-    "numpy-stl==3.1.1",
-    "matplotlib",
+    "sparrowpy>=1.1",
     "requests",
-    "gmsh==4.13.1",
-    "edg-acoustics @ git+https://github.com/Building-acoustics-TU-Eindhoven/edg-acoustics.git@08cac98da98ed14ba1366741b1c0644001503b82",
-    "acousticDE @ git+https://github.com/Building-acoustics-TU-Eindhoven/acousticDE.git@d32afb2498e27bd996fc7356d57dc4f1ed76aa44",
+    "gmsh",
+    "trimesh",
+    "pyfar",
+    "pyrato",
 ]
 
 [project.optional-dependencies]
@@ -61,17 +62,17 @@ docs = [
     "sphinx-reredirects",
 ]
 
-dev = ["dg_interface[deploy,tests,docs]"]
+dev = ["sparrowpy_interface[deploy,tests,docs]"]
 
 [build-system]
 requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
-packages = ["dg_interface"]
-
-[tool.setuptools.dynamic]
+packages = ["sparrowpy_interface"]
 
 [project.scripts]
-dg_interface = "dg_interface:main"
+sparrowpy_interface = "sparrowpy_interface:main"
 
+[tool.pytest.ini_options]
+testpaths = ["tests"]

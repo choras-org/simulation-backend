@@ -4,6 +4,7 @@ version = "0.1.0"
 description = "Python package for DE acoustic simulation."
 requires-python = ">=3.11"
 authors = [
+    { name = 'The CHORAS developers' },
     { name = "Silvin Willemsen", email = "s.willemsen@tue.nl" },
     { name = "Ilaria Fichera", email = "f.fichera@tue.nl" },
     { name = "Marco Berzborn", email = "m.berzborn@tue.nl" }
@@ -17,7 +18,7 @@ keywords = [
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: MIT License",
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
     "Natural Language :: English",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.11",

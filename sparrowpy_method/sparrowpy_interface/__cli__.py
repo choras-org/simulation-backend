@@ -1,20 +1,20 @@
-"""CLI module for DE method."""
+"""CLI module for sparrowpy method."""
 import os
-from .DEinterface import DEMethod
+from .sparrowpy_interface import sparrowpyMethod
 import json
 import sys
 
 
 def main() -> None:
-    """Run the DE method simulation."""
+    """Run the sparrowpy method simulation."""
     # JSON path in the uploads folder. This variable is set for the
     # container when it is started up.
     json_file_path = os.environ.get("JSON_PATH")
 
-    print(f"Running DE method with JSON_PATH={json_file_path}")
-    de_method_object = DEMethod(json_file_path)
+    print(f"Running sparrowpy method with JSON_PATH={json_file_path}")
+    sparrowpy_method_object = sparrowpyMethod(json_file_path)
     try:
-        de_method_object.run_simulation()
+        sparrowpy_method_object.run_simulation()
     except Exception as e:
         # Write error to result JSON so backend can read it
         with open(json_file_path) as f:
@@ -29,6 +29,6 @@ def main() -> None:
         sys.exit(1)
 
     # Save the results to a separate file
-    de_method_object.save_results()
+    sparrowpy_method_object.save_results()
 
-    print("DE container finished.")
+    print("sparrowpy container finished.")

@@ -1,0 +1,63 @@
+{
+    "geo_path": "test_room_misuka.geo",
+    "msh_path": "test_room_misuka.msh",
+    "absorption_coefficients": {
+        "floor": "0.05, 0.05, 0.08, 0.1, 0.12, 0.15",
+        "wall1": "0.05, 0.05, 0.08, 0.1, 0.12, 0.15",
+        "ceiling": "0.4, 0.5, 0.6, 0.7, 0.8, 0.9",
+        "wall2": "0.05, 0.05, 0.08, 0.1, 0.12, 0.15",
+        "wall3": "0.05, 0.05, 0.08, 0.1, 0.12, 0.15",
+        "wall4": "0.05, 0.05, 0.08, 0.1, 0.12, 0.15"
+    },
+    "simulationSettings": {
+        "rays_per_frequency": 1048576,
+        "max_time": 0.1,
+        "sampling_rate": 10000,
+        "sound_power_W": 1,
+        "speed_of_sound": 343,
+        "scattering_125": 0.1,
+        "scattering_250": 0.1,
+        "scattering_500": 0.1,
+        "scattering_1000": 0.1,
+        "scattering_2000": 0.1,
+        "scattering_4000": 0.1,
+        "log_data": "no"
+    },
+    "results": [
+        {
+            "simulationMethodId": 1,
+            "resultType": "IR",
+            "simulationId": 1,
+            "sourceX": 1.0,
+            "sourceY": 2.0,
+            "sourceZ": 1.5,
+            "frequencies": [
+                125,
+                250,
+                500,
+                1000,
+                2000,
+                4000
+            ],
+            "percentage": 0,
+            "responses": [
+                {
+                    "responseId": 1,
+                    "x": 5.0,
+                    "y": 3.5,
+                    "z": 1.5,
+                    "parameters": {
+                        "edt": [],
+                        "t20": [],
+                        "t30": [],
+                        "c80": [],
+                        "d50": [],
+                        "ts": [],
+                        "spl_t0_freq": []
+                    },
+                    "receiverResults": []
+                }
+            ]
+        }
+    ]
+}

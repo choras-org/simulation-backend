@@ -1,0 +1,87 @@
+{
+    "type": "simulationSettings",
+    "options": [
+        {
+            "name": "Rays per Frequency Band",
+            "id": "rays_per_frequency",
+            "type": "integer", 
+            "display": "text",
+            "min": 1000,
+            "max": 4194304,
+            "step": 524288,
+            "default": 1048576,
+            "description": "Number of rays used for every frequency band in every source-reciever simulation."
+        },
+        {
+            "name": "Maximum Response Length",
+            "id": "max_time",
+            "type": "float",
+            "display": "text",
+            "min": 0.01,
+            "max": 20,
+            "step": 1.0,
+            "default": 10,
+            "endAdornment": "s",
+            "description": "Length of the simulated IR."
+        },
+        {
+            "name": "Histogram sampling rate",
+            "id": "sampling_rate",
+            "type": "integer",
+            "display": "text",
+            "min": 100,
+            "max": 40000,
+            "step": 1000,
+            "default": 20000,
+            "endAdornment": "Hz",
+            "description": "Sampling rate of the simulated histogram."
+        },
+        {
+            "name": "Speed of Sound",
+            "id": "speed_of_sound",
+            "display": "text",
+            "type": "float",
+            "min": 200,
+            "max": 360,
+            "step": 5,
+            "default": 343,
+            "endAdornment": "m/s",
+            "description": "Speed of sound in m/s that is used in simulation."
+        },
+        {
+            "name": "Scattering",
+            "id": "scattering_coefficients",
+            "display": "text",
+            "type": "string",
+            "default": "0.1, 0.1, 0.1, 0.1, 0.1",
+            "endAdornment": "",
+            "description": "Used for controlling scattering on all surface materials for the different frequency bands [s(125), s(250), s(500), s(1000), s(2000)]."
+        }
+    ],
+
+    "_future_options": [
+        {
+            "name": "Maximum Energy Loss",
+            "id": "max_energy_loss",
+            "type": "integer", 
+            "display": "text",
+            "min": 0,
+            "max": 100,
+            "step": 1,
+            "default": 50,
+            "endAdornment": "%"
+        },
+        {
+            "name": "Processing Unit",
+            "id": "comp_backend",
+            "type": "string",
+            "display": "radio",
+            "options": 
+            {
+                "CPU": "cpu", 
+                "CUDA GPU": "gpu"
+            },
+            "default": "cpu"
+        }
+    ]
+}

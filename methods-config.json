@@ -43,5 +43,25 @@
         "entryFile": "__main__.py",
         "repositoryURL": "https://github.com/LCAV/pyroomacoustics",
         "documentationURL": "https://pyroomacoustics.readthedocs.io"
+    },
+    {
+        "simulationType": "misuka",
+        "containerImage": "misuka_image:latest", 
+        "envVars": {},
+        "label": "misuka",
+        "entryFile":"misukaInterface.py",
+        "settings":"misuka_setting.json",
+        "repositoryURL":"https://github.com/misuka-renderer/misuka.git",
+        "documentationURL":"https://www.tu.berlin/en/ak/research/projects/differentiable-acoustic-path-tracing"
+    },
+    {
+        "simulationType": "sparrowpy", 
+        "containerImage": "sparrowpy_image:latest",
+        "envVars": {},
+        "label": "sparrowpy",
+        "settings":"sparrowpy_setting.json",
+        "entryFile":"sparrowpy_interface.py",
+        "repositoryURL":"https://github.com/sparrow-acoustics/sparrowpy",
+        "documentationURL":"https://sparrowpy.readthedocs.io/en/stable"
     }
 ]

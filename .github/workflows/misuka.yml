@@ -1,0 +1,48 @@
+name: misuka Method CI
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+    branches:
+      - "**"
+  push:
+    branches:
+      - "**"
+
+jobs:
+  build-docker-image:
+    name: Build misuka Docker image (${{ matrix.platform }})
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux/amd64
+            runner: ubuntu-latest
+          - platform: linux/arm64
+            runner: ubuntu-24.04-arm
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker Image
+        id: docker_build
+        run: |
+          docker buildx build -f misuka_method/Dockerfile . \
+            --platform=${{ matrix.platform }} \
+            -t misuka-method-test:latest \
+            --load 2>&1 | tee build.log
+
+      - name: Upload build log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-build-log-${{ strategy.job-index }}
+          path: build.log
+

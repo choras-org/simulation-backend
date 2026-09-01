@@ -3,6 +3,7 @@
     "options": [
         {
             "name": "Speed of sound",
+            "description": "Speed of sound in air filling the room.",
             "id": "speed_of_sound",
             "type": "float",
             "display": "text",
@@ -14,6 +15,7 @@
         },
         {
             "name": "Global scattering coefficient",
+            "description": "Broadband scattering coefficient for all surfaces of the room.",
             "id": "global_scattering_coefficient",
             "type": "float",
             "display": "text",
@@ -24,6 +26,7 @@
         },
         {
             "name": "Image sources: Order",
+            "description": "The maximum order of image sources to consider. Higher order reflections will be generated via the ray tracer. A higher number will increase computation time and memory usage.",
             "id": "image_source_order",
             "type": "integer",
             "display": "text",
@@ -34,6 +37,7 @@
         },
         {
             "name": "Ray tracing: Number of rays",
+            "description": "The number of rays to trace from each source. Higher numbers will yield more accurate results but will take longer to compute.",
             "id": "ray_tracer_number_of_rays",
             "type": "integer",
             "display": "text",
@@ -44,6 +48,7 @@
         },
         {
             "name": "Ray tracing: detector radius",
+            "description": "The radius of the detector sphere around each receiver point. Rays that intersect this sphere will be considered as detected by the receiver.",
             "id": "ray_tracer_detector_radius",
             "type": "float",
             "display": "text",
@@ -55,6 +60,7 @@
         },
         {
             "name": "Ray tracing: Time threshold",
+            "description": "The maximum time for which a ray will be followed.",
             "id": "ray_tracer_time_threshold",
             "type": "float",
             "display": "text",
@@ -66,6 +72,7 @@
         },
         {
             "name": "Ray tracing: Energy threshold",
+            "description": "The energy threshold below which a ray will no longer be followed.",
             "id": "ray_tracer_energy_threshold",
             "type": "float",
             "display": "text",
@@ -77,6 +84,7 @@
         },
         {
             "name": "Sampling rate",
+            "description": "The sampling rate of the simulated room impulse response.",
             "id": "sampling_rate",
             "type": "integer",
             "display": "text",
