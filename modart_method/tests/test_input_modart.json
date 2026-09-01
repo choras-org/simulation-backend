@@ -1,0 +1,63 @@
+{
+    "absorption_coefficients": {
+        "walls": "0.02, 0.03, 0.04, 0.08, 0.15",
+        "floor": "0.11, 0.22, 0.42, 0.57, 0.63",
+        "ceiling": "0.01, 0.01, 0.01, 0.01, 0.01"
+    },
+    "geo_path": "tests/test_room_modart.geo",
+    "results": [
+        {
+            "label": "Source 1",
+            "orderNumber": 1,
+            "percentage": 0,
+            "sourcePointId": "fbc3e3f4-62ba-409b-87c4-8ad6da93713d",
+            "sourceX": 0.3,
+            "sourceY": 0.3,
+            "sourceZ": 0.3,
+            "resultType": "MoDART",
+            "frequencies": [
+                125,
+                250,
+                500,
+                1000,
+                2000
+            ],
+            "responses": [
+                {
+                    "label": "Receiver 1",
+                    "orderNumber": 1,
+                    "x": 0.6,
+                    "y": 0.6,
+                    "z": 0.3,
+                    "pointId": "66821432-a860-4051-acf7-f3e719e479a3",
+                    "parameters": {
+                        "edt": [],
+                        "t20": [],
+                        "t30": [],
+                        "c80": [],
+                        "d50": [],
+                        "ts": [],
+                        "spl_t0_freq": []
+                    },
+                    "receiverResults": []
+                }
+            ]
+        }
+    ],
+    "task_id": "6511d180-1431-4d89-bcd5-a81dceab6f3a",
+    "fs_auralization": 44100,
+    "simulationSettings": {
+        "durat": 1,
+        "f_e": 10000,
+        "T60": 0.1,
+        "slopes": 2,
+        "humi": 50,
+        "temp": 20,
+        "pres": 100,
+        "ppsm": 30,
+        "rays": 1000,
+        "pool": 4,
+        "sampling_rate": 44100
+    },
+    "settingsPreset": "Default"
+}

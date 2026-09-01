@@ -1,0 +1,74 @@
+[project]
+name = "modart_interface"
+version = "0.1.0"
+description = "Python package implementing Acoustic Radiance Transfer and its Modal Decomposition."
+requires-python = ">=3.11"
+authors = [
+    { name = "Matteo Scerbo", email = "matteo.scerbo@gmail.com" },
+]
+keywords = [
+    "acoustic simulation",
+    "geometrical acoustics",
+    "acoustic radiance transfer",
+]
+
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+    "Natural Language :: English",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+]
+
+dependencies = [
+    "raves>=0.2.1",
+    "gmsh==4.13.1",
+    "requests",
+    "numpy<2.5.0",
+]
+
+[project.optional-dependencies]
+deploy = [
+    "twine",
+    "wheel",
+    "build",
+    "setuptools",
+    "bump-my-version",
+]
+
+tests = [
+    "pytest",
+    "pytest-cov",
+    "watchdog",
+    "ruff",
+    "coverage",
+]
+
+docs = [
+    "sphinx",
+    "autodocsumm>=0.2.14",
+    "pydata-sphinx-theme",
+    "sphinx_mdinclude",
+    "sphinx-design",
+    "sphinx-favicon",
+    "sphinx-reredirects",
+]
+
+dev = ["modart_interface[deploy,tests,docs]"]
+
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["modart_interface"]
+
+[project.scripts]
+modart_interface = "modart_interface:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

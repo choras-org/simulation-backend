@@ -48,5 +48,15 @@
         "entryFile":"sparrowpy_interface.py",
         "repositoryURL":"https://github.com/sparrow-acoustics/sparrowpy",
         "documentationURL":"https://sparrowpy.readthedocs.io/en/stable"
+    },
+    {
+        "simulationType": "MoDART",
+        "containerImage": "modart_image:latest",
+        "envVars": {},
+        "label": "MoD-ART",
+        "entryFile":"modart_interface.py",
+        "settings":"modart_setting.json",
+        "repositoryURL":"https://github.com/IoSR-Surrey/MoD-ART/",
+        "documentationURL":"https://github.com/IoSR-Surrey/MoD-ART/blob/master/example%20usage/Tutorial.ipynb"
     }
 ]
