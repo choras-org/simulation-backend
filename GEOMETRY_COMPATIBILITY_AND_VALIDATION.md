@@ -63,7 +63,7 @@ It has three parts:
 | `compatibilityLevels` | The three allowed levels and what each means. |
 | `issues` | One entry per issue kind: `label`, `description`, and default `compatibility`. |
 
-The three compatibility levels (worst-case ordering matters — see §1.5):
+The three compatibility levels (worst-case ordering matters — see 1.5):
 
 | Level | Meaning | Severity rank |
 |-------|---------|:-------------:|
@@ -145,10 +145,10 @@ eight keep their baseline values.
 
 ### 1.4 Steps to add compatibility rules for a new method
 
-1. Create `your_method/geometry_compatibility.json` using the template in §1.2.
+1. Create `your_method/geometry_compatibility.json` using the template in 1.2.
 2. Set `method` and a helpful `notes` string.
 3. Under `issues`, add **only** the kinds whose `compatibility` differs from the
-   baseline. Use the exact kind keys from §1.1.
+   baseline. Use the exact kind keys from 1.1.
 4. Register it in [`methods-config.json`](methods-config.json) by adding a
    `geometryCompatibility` entry pointing at the file (path relative to this
    repo root):
@@ -312,7 +312,7 @@ combines the two verdicts using **worst-case wins** logic:
 
 - Your `compatible: True` → verdict `compatible`; `compatible: False` →
   `incompatible`.
-- This is compared against the declarative verdict from §1.5, and the **more
+- This is compared against the declarative verdict from 1.5, and the **more
   severe** of the two is used as the method's final `compatible` value.
 - Your `reason` string is attached to the method result and shown to the user.
 
@@ -327,7 +327,7 @@ it cannot turn a rule-based `incompatible` into `compatible`.
 3. Always return `{"compatible": bool, "reason": str}` on **every** path,
    including error paths.
 4. Register it via the `methodValidation` key in
-   [`methods-config.json`](methods-config.json) (see the snippet in §1.4).
+   [`methods-config.json`](methods-config.json) (see the snippet in 1.4).
 5. Test locally by uploading a model that should pass and one that should fail,
    and confirm the frontend shows the expected verdict and your `reason`.
 
@@ -347,7 +347,7 @@ it cannot turn a rule-based `incompatible` into `compatible`.
 
 | Contract | Requirement |
 |----------|-------------|
-| Issue kind keys | Must match the pipeline's `IssueKind` values (§1.1). |
+| Issue kind keys | Must match the pipeline's `IssueKind` values (1.1). |
 | Compatibility level | One of `compatible`, `warning`, `incompatible`. |
 | Validation function | Named `run_method_validation(input_file: str) -> dict`. |
 | Validation return | `{"compatible": bool, "reason": str}` on every path. |
