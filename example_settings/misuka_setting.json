@@ -9,7 +9,7 @@
             "min": 1000,
             "max": 4194304,
             "step": 524288,
-            "default": 1048576,
+            "default": 524288,
             "description": "Number of rays used for every frequency band in every source-reciever simulation."
         },
         {
