@@ -76,6 +76,9 @@ class misukaMethod(SimulationMethod):
             msh_path = result_container["msh_path"]
             absorption_map = result_container["absorption_coefficients"]
             scattering_str = simulation_settings["scattering_coefficients"]
+            medium = simulation_settings["medium"]
+            speed_method = simulation_settings["speed_method"]
+            apply_attenuation = simulation_settings.get("apply_attenuation") == "true"
         except KeyError as e:
             raise KeyError(f"Missing required key in the input JSON file: {e}")
 
@@ -86,9 +89,8 @@ class misukaMethod(SimulationMethod):
         logger.info(f'Input value for rays per frequency: {rpf}')
         logger.info(f'Input value for maximum response length: {max_time}')
         logger.info(f'Input value for time_bins: {time_bins}')
-        logger.info(f'Input value for speed of sound: {speed_of_sound}')
         logger.info(f'Input values for absorption: {absorption_map}')
-        
+
         frequency_range = (float(np.min(frequencies)), float(np.max(frequencies)))
         f_center, f_lower, f_upper = pf.constants.fractional_octave_frequencies_exact(1, frequency_range)
         assert np.all(np.abs(f_center-frequencies)/frequencies < 1e-2), "Frequency mismatch between input frequencies and pyrato's fractional octave frequencies"
@@ -114,17 +116,10 @@ class misukaMethod(SimulationMethod):
         # updating percentage of progress
         set_progress_and_save(25, result_container, self.input_json_path)
 
-        # set up the integrator
-        integrator_acoustic = mi.load_dict(
-            {
-                "type": "acoustic_path",
-                "speed_of_sound": speed_of_sound,
-                "max_depth": -1,  # maximum path depth (-1 = no limit, 1 = direct sound only, 2 = up to 1 reflection, etc.)
-                "max_time": max_time,  # maximum propagation time in seconds
-            }
-        )
-
-        logger.info(f'Integrator Setup: {integrator_acoustic}')
+        # set up the integrator, using whatever medium properties are available;
+        # speed_of_sound is reassigned to the value actually used to render the ETC, so the
+        # reflection-density synthesis below stays consistent with it (see build_acoustic_integrator)
+        integrator_acoustic, speed_of_sound = build_acoustic_integrator(medium, max_time, speed_method, speed_of_sound, apply_attenuation)
 
         # reconstructing filter bank for RIR synthesis from the per-band ETC envelope;
         # only depends on frequencies/target_sampling_rate, so build it once
@@ -499,6 +494,186 @@ def create_frequency_value_pairs(frequencies: list, val_str: str, num_tuples: in
         raise ValueError(f"Invalid values: {val_str}") from e
 
     return list(zip(frequencies[:num_tuples], vals))
+
+def fetch_medium_properties(
+    medium_str: str,
+) -> tuple[float | None, float | None, float | None, float | None, float | None, bool]:
+    """Parse the atmospheric medium string into its individual property values.
+
+    Specifies atmospheric conditions used for Speed and Attenuation: temp,
+    rel hum, atmo pres, sat vap pres, CO2. Use x for missing values.
+
+    Parameters
+    ----------
+    medium_str : str
+        Comma-separated string of 5 values in the order temperature,
+        relative humidity, atmospheric pressure, saturation vapor pressure,
+        CO2 concentration. Missing values are marked with "x".
+
+    Returns
+    -------
+    temp : float or None
+        Temperature, or None if missing.
+    rel_hum : float or None
+        Relative humidity, or None if missing.
+    atmo_pres : float or None
+        Atmospheric pressure, or None if missing.
+    sat_vap_pres : float or None
+        Saturation vapor pressure, or None if missing.
+    co2 : float or None
+        CO2 concentration, or None if missing.
+    valid : bool
+        True if valid data was provided, i.e. at least the temperature
+        value is present.
+
+    Raises
+    ------
+    ValueError:
+    - If ``medium_str`` does not contain exactly 5 comma-separated values.
+    - If a value is neither "x" nor convertible to float.
+
+    Examples
+    --------
+    >>> fetch_medium_properties("20, x, x, x, x")
+    (20.0, None, None, None, None, True)
+    >>> fetch_medium_properties("x, x, x, x, x")
+    (None, None, None, None, None, False)
+    """
+    values = [val.strip() for val in medium_str.split(",")]
+    if len(values) != 5:
+        raise ValueError(
+            f"Medium string must contain exactly 5 comma-separated values: {medium_str}"
+        )
+
+    parsed = []
+    for val in values:
+        if val.lower() == "x":
+            parsed.append(None)
+        else:
+            try:
+                parsed.append(float(val))
+            except ValueError as e:
+                raise ValueError(f"Invalid value in medium string: {medium_str}") from e
+
+    temp, rel_hum, atmo_pres, sat_vap_pres, co2 = parsed
+    valid = temp is not None
+
+    return temp, rel_hum, atmo_pres, sat_vap_pres, co2, valid
+
+def build_acoustic_integrator(
+    medium_str: str,
+    max_time: float,
+    speed_method: str,
+    speed_of_sound: float,
+    apply_attenuation: bool | None = None,
+):
+    """Parse the medium string and initialize misuka's ``acoustic_path`` integrator.
+
+    Builds the ``acoustic_medium`` dict from whichever atmospheric
+    properties are present in ``medium_str`` (see
+    :func:`fetch_medium_properties`), omitting the rest so misuka's own
+    "auto" method selects the speed-of-sound formula matching the
+    available inputs ("simple" if only temperature is given, "ideal_gas"
+    if humidity/pressure are given too, "cramer" if CO2 is also given).
+    If ``speed_method`` is ``"own_value"``, ``speed_of_sound`` is set
+    explicitly instead, which always takes precedence over
+    ``acoustic_medium`` in misuka. If neither a valid medium nor an own
+    value is available, misuka falls back to its built-in default speed
+    of sound (343.0 m/s) and skips air attenuation.
+
+    Parameters
+    ----------
+    medium_str : str
+        Atmospheric medium string, see :func:`fetch_medium_properties`.
+    max_time : float
+        Maximum propagation time in seconds, forwarded to the integrator.
+    speed_method : str
+        ``"own_value"`` to use ``speed_of_sound`` explicitly, any
+        other value (e.g. ``"auto"``) to derive the speed of sound from
+        ``acoustic_medium``.
+    speed_of_sound : float
+        User-specified speed of sound in m/s, used when
+        ``speed_method == "own_value"``.
+    apply_attenuation : bool, optional
+        Whether to apply frequency-dependent air attenuation (ISO 9613-1).
+        Forwarded to ``acoustic_medium`` only if not None; misuka requires
+        temperature, relative humidity and atmospheric pressure to compute
+        attenuation, and raises an error if it is explicitly set to True
+        without them. If None (default), misuka's own default (True,
+        silently skipped when those fields are missing) applies.
+
+    Returns
+    -------
+    mitsuba.Integrator
+        The loaded ``acoustic_path`` integrator.
+    float
+        The speed of sound (m/s) actually used by the integrator to
+        render the ETC: ``speed_of_sound`` verbatim if
+        ``speed_method == "own_value"``, otherwise the value derived from
+        ``acoustic_medium`` via :py:func:`mitsuba.acoustic.speed_of_sound`
+        (mirroring what misuka computes internally for the integrator),
+        or misuka's built-in default (343.0) if neither is available.
+        Any code that synthesizes a broadband RIR from the ETC (e.g. via
+        a reflection density that depends on the propagation speed) must
+        use this value to stay consistent with the ETC's time axis.
+    """
+    temp, rel_hum, atmo_pres, sat_vap_pres, co2, valid = fetch_medium_properties(medium_str)
+    logger.info(f'Input value for medium: {medium_str}')
+    logger.info(f'Input value for speed method: {speed_method}')
+    logger.info(f'Input value for apply attenuation: {apply_attenuation}')
+
+    integrator_dict = {
+        "type": "acoustic_path",
+        "max_depth": -1,  # maximum path depth (-1 = no limit, 1 = direct sound only, 2 = up to 1 reflection, etc.)
+        "max_time": max_time,  # maximum propagation time in seconds
+    }
+
+    acoustic_medium = {}
+    if valid:
+        acoustic_medium["temperature"] = temp
+        if rel_hum is not None:
+            acoustic_medium["relative_humidity"] = rel_hum
+        if atmo_pres is not None:
+            acoustic_medium["atmospheric_pressure"] = atmo_pres
+        if sat_vap_pres is not None:
+            acoustic_medium["saturation_vapor_pressure"] = sat_vap_pres
+        if co2 is not None:
+            acoustic_medium["co2_ppm"] = co2
+    else:
+        logger.info('No valid medium properties provided (temperature missing); speed/attenuation medium fields are not set.')
+
+    if apply_attenuation is not None:
+        acoustic_medium["apply_attenuation"] = apply_attenuation
+
+    if acoustic_medium:
+        integrator_dict["acoustic_medium"] = acoustic_medium
+        logger.info(f'Using acoustic_medium (missing fields fall back to misuka defaults): {acoustic_medium}')
+
+    if speed_method == "own_value":
+        integrator_dict["speed_of_sound"] = speed_of_sound # overwrites any calculated value by misuka
+        resolved_speed_of_sound = speed_of_sound
+        logger.info(f'Using speed of sound specified by user: {speed_of_sound} m/s')
+    elif valid:
+        # Mirrors what misuka computes internally from the same acoustic_medium
+        # dict, so the ETC (rendered with this integrator) and any later
+        # processing (e.g. reflection-density synthesis) agree on the speed.
+        resolved_speed_of_sound = mi.acoustic.speed_of_sound(
+            temperature=temp,
+            relative_humidity=rel_hum if rel_hum is not None else float("nan"),
+            atmospheric_pressure=atmo_pres if atmo_pres is not None else float("nan"),
+            saturation_vapor_pressure=sat_vap_pres if sat_vap_pres is not None else -1.0,
+            co2_ppm=co2 if co2 is not None else float("nan"),
+            method="auto",
+        )
+        logger.info(f'Speed of sound derived from acoustic_medium: {resolved_speed_of_sound} m/s')
+    else:
+        resolved_speed_of_sound = 343.0
+        logger.info('No medium properties and no own speed of sound provided; misuka default (343.0 m/s) is used.')
+
+    integrator_acoustic = mi.load_dict(integrator_dict)
+    logger.info(f'Integrator Setup: {integrator_acoustic}')
+
+    return integrator_acoustic, resolved_speed_of_sound
 
 def export_physical_surface_to_ply(surface_name: str, entity_tags, ply_path: str | Path) -> Path:
     """Export only the triangular mesh faces of one physical surface to PLY.

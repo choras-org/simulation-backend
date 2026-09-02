@@ -13,7 +13,10 @@
         "rays_per_frequency": 1048576,
         "max_time": 0.1,
         "sampling_rate": 10000,
+        "medium":"25.0, 0.6, 101825.0, 3200.0, 400.0",
+        "speed_method": "auto",
         "speed_of_sound": 343,
+        "apply_attenuation": "false",
         "scattering_coefficients": "0.1, 0.1, 0.1, 0.1, 0.1"
     },
     "results": [

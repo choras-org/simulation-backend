@@ -50,11 +50,11 @@ ENV CMAKE_C_COMPILER_LAUNCHER=ccache
 RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 1
 RUN python3.11 -m pip install --upgrade pip typing_extensions
 
-# Shallow clone of misuka from the lgpl branch
+# Shallow clone of misuka from the feature/speed_of_sound branch
 RUN mkdir -p /opt/misuka && cd /opt/misuka && \
     git init && \
     git remote add origin https://github.com/misuka-renderer/misuka.git && \
-    git fetch --depth 1 origin lgpl && \
+    git fetch --depth 1 origin feature/speed_of_sound && \
     git checkout FETCH_HEAD && \
     git submodule update --init --recursive --depth 1
 
