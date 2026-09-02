@@ -6,11 +6,12 @@ build-backend = "setuptools.build_meta"
 name = "simulation_backend"
 version = "0.1.0"
 requires-python = ">=3.10"
-description = "Simulation backend"
+description = "Simulation backend umbrella. This is only for version managing of the umbrella. Not a real package or method."
 
 dependencies = [
     "gmsh",
     "matplotlib",
+    "bump-my-version",
 ]
 
 [project.optional-dependencies]
@@ -41,3 +42,15 @@ dev = ["simulation_backend[tests,docs]"]
 [tool.setuptools]
 # Explicitly declare that this distribution does not define top-level packages.
 packages = []
+
+[tool.bumpversion]
+current_version = "0.1.0"
+commit = true
+tag = true
+message = "Bump simulation backend umbrella version: {current_version} → {new_version}"
+tag_message = "Bump simulation backend umbrella version: {current_version} → {new_version}"
+
+[[tool.bumpversion.files]]
+filename = "pyproject.toml"
+search = "version = \"{current_version}\""
+replace = "version = \"{new_version}\""
