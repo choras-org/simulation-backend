@@ -21,24 +21,25 @@ conda run -n choras python -m pip install -e simulation-backend/deism_method
 ```
 
 The method's [`pyproject.toml`](pyproject.toml) declares everything needed:
-`deism==2.2.1.15` plus the `tests` extra (`pytest`, `pytest-cov`,
+`deism==2.2.1.16` plus the `tests` extra (`pytest`, `pytest-cov`,
 `coverage>=7.6.1`). No dependency from the `backend/` submodule is required.
 
 ## DEISM library version
 
-- Pinned in [`pyproject.toml`](pyproject.toml): **`deism==2.2.1.15`** (matches the
+- Pinned in [`pyproject.toml`](pyproject.toml): **`deism==2.2.1.16`** (matches the
   Docker image and current PyPI latest).
-- The `choras` env was updated to `2.2.1.15` on 2026-08-21 (was 2.2.1.14):
+- The `choras` env was updated to `2.2.1.16` on 2026-09-03 (was 2.2.1.15 since
+  2026-08-21):
 
   ```bash
-  conda run -n choras python -m pip install "deism==2.2.1.15"
+  conda run -n choras python -m pip install "deism==2.2.1.16"
   ```
 
 - Verify:
 
   ```bash
-  conda run -n choras python -m pip show deism        # -> Version: 2.2.1.15
-  conda run -n choras python -c "from deism.room_check import get_room_geometry"
+  conda run -n choras python -m pip show deism        # -> Version: 2.2.1.16
+  conda run -n choras python -c "from deism.room_check import sync_room_geometry"
   ```
 
 From `2.2.1.14` onward, impedance outside the supplied material bands holds the
@@ -47,9 +48,23 @@ materials that used to become non-passive above the highest band (negative
 resistance, reflection gain greater than one) stay passive up to Nyquist. The
 wrapper sends wall data as `"absorption"`.
 
+From `2.2.1.16` onward `deism` reads room geometry with `meshio` instead of the
+Gmsh Python bindings and accepts **only a pre-generated `.msh` file** (MSH 2 or
+4.1). The wrapper therefore reads `msh_path` (not `geo_path`) from the input
+JSON; the CHORAS backend writes both (absolute paths). A relative `msh_path`
+is resolved against the directory of the JSON file, so a hand-written JSON next
+to its mesh works from any working directory. The wall names come from the
+`wall_centers` mapping that `deism.room_check.sync_room_geometry` writes into
+the JSON (one named physical surface per wall), so the wrapper does not parse
+the mesh itself and has no gmsh or meshio dependency; the Docker image no
+longer installs gmsh. Mesh fixtures carry Gmsh's trailing spaces; `.gitattributes`
+exempts `*.msh` from `git diff --check`. The test fixture
+`tests/test_room_Deism.msh` must be meshed from `tests/test_room_Deism.geo` so
+its physical surface names match the UUID keys in `test_input_Deism.json`.
+
 ## One gotcha: `coverage` must be ≥ 7.6.1
 
-`deism==2.2.1.15` pulls **numba 0.66.0**, whose `numba.misc.coverage_support`
+`deism==2.2.1.16` pulls **numba 0.66.0**, whose `numba.misc.coverage_support`
 requires `coverage.types.Tracer`. That attribute was added in **coverage 7.6.1**
 (verified by bisection: 7.6.0 lacks it, 7.6.1 has it — 7.4/7.5 do NOT work). If
 the env has an older coverage, importing `deism` (hence collecting the tests)
@@ -76,8 +91,12 @@ cd simulation-backend/deism_method
 conda run -n choras python -m pytest -q
 ```
 
-Expected: **12 passed** (the DEISM run uses the DEISM-ARG convex path,
+Expected: **13 passed** (the DEISM run uses the DEISM-ARG convex path,
 `roomType: convex`).
+
+Ruff is part of the `tests` extra; run `conda run -n choras python -m ruff check
+deism_interface tests`. The 12 findings it reports today (module name, import
+ordering, one bare `except`) all predate the deism 2.2.1.16 migration.
 
 ## Wall-ordering note (convex-only)
 

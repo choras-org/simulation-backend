@@ -3,8 +3,8 @@
 CHORAS rooms take DEISM's convex/ARG path, which re-matches each wall to its
 absorption value by centroid proximity. ``get_deism_surface_order`` must
 therefore produce an order that depends only on geometry (wall centroids), not
-on the Gmsh physical-tag declaration order -- otherwise a change in ``.geo``
-surface declaration order could silently permute boundary conditions.
+on the physical-tag declaration order of the mesh -- otherwise a change in
+``.geo`` surface declaration order could silently permute boundary conditions.
 """
 
 import pytest
@@ -23,19 +23,19 @@ WALL_CENTERS = {
 }
 
 
-def _vgroups(pairs):
-    """Build ``[dim, tag, name]`` physical-group entries for dim=2 surfaces."""
-    return [[2, tag, name] for tag, name in pairs]
+def _names(pairs):
+    """Surface names from ``(tag, name)`` pairs, in declaration order."""
+    return [name for _, name in pairs]
 
 
 def test_order_is_independent_of_declaration_and_tags():
     """Two different tag/declaration orderings yield the identical wall order."""
-    order_a = _vgroups(
+    order_a = _names(
         [(2, "uuid-A"), (5, "uuid-B"), (4, "uuid-C"),
          (6, "uuid-D"), (1, "uuid-E"), (3, "uuid-F")]
     )
     # Different declaration order AND different tag->name assignment.
-    order_b = _vgroups(
+    order_b = _names(
         [(1, "uuid-F"), (2, "uuid-E"), (3, "uuid-D"),
          (4, "uuid-C"), (5, "uuid-B"), (6, "uuid-A")]
     )
@@ -48,21 +48,15 @@ def test_order_is_independent_of_declaration_and_tags():
     assert sorted(result_a) == sorted(WALL_CENTERS)
 
 
-def test_ignores_non_surface_groups():
-    """Volume/line physical groups (dim != 2) must not affect the result."""
-    surfaces = _vgroups(
-        [(2, "uuid-A"), (5, "uuid-B"), (4, "uuid-C"),
-         (6, "uuid-D"), (1, "uuid-E"), (3, "uuid-F")]
-    )
-    with_extras = surfaces + [[3, 1, "RoomVolume"], [1, 1, "default"]]
-
-    assert get_deism_surface_order(with_extras, WALL_CENTERS) == \
-        get_deism_surface_order(surfaces, WALL_CENTERS)
+def test_accepts_any_iterable_of_names():
+    """The keys view of the JSON ``wall_centers`` mapping is accepted as-is."""
+    assert get_deism_surface_order(WALL_CENTERS.keys(), WALL_CENTERS) == \
+        get_deism_surface_order(list(WALL_CENTERS), WALL_CENTERS)
 
 
 def test_fewer_than_four_surfaces_raises():
     """A room that cannot be a closed polyhedron (< 4 faces) is rejected."""
-    three = _vgroups([(2, "uuid-A"), (5, "uuid-B"), (4, "uuid-C")])
+    three = _names([(2, "uuid-A"), (5, "uuid-B"), (4, "uuid-C")])
     with pytest.raises(ValueError):
         get_deism_surface_order(three, WALL_CENTERS)
 
@@ -83,5 +77,5 @@ def test_non_hexahedral_convex_rooms_accepted():
             "uuid-H": [3.0, 2.5, 3.0],
             "uuid-I": [2.0, 2.9, 2.9],
         })
-        result = get_deism_surface_order(_vgroups(pairs), centers)
+        result = get_deism_surface_order(_names(pairs), centers)
         assert sorted(result) == sorted(name for _, name in pairs)

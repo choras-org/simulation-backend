@@ -124,3 +124,5 @@ pyfar/signals/files/*
 # workaround for failing test discovery in vscode
 tests/*/__init__.py
 tests/private/
+# local scratch geometry in deism_method, not a fixture
+deism_method/tests/Room215.obj

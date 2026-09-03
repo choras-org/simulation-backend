@@ -555,11 +555,11 @@ wheels = [
 
 [[package]]
 name = "deism"
-version = "2.2.1.15"
+version = "2.2.1.16"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "gmsh" },
     { name = "matplotlib" },
+    { name = "meshio" },
     { name = "numba" },
     { name = "numpy" },
     { name = "psutil" },
@@ -569,14 +569,14 @@ dependencies = [
     { name = "sound-field-analysis" },
     { name = "sympy" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/0e/2f/5061cad89b8e927f990912574c22e28d551d4ed6cf2fe9e8090e6f703e75/deism-2.2.1.15.tar.gz", hash = "sha256:8d02f7bb50898b995f6f271649f9d538ce036f6b1577841b5d33dd064abb741d", size = 992299, upload-time = "2026-08-08T12:20:12.366Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/24/a3/3cca8a0d483f297f87fe0d23eb7c2b639a72004e2c59f1e51292b7844e8e/deism-2.2.1.16.tar.gz", hash = "sha256:018d7f55e44455d627c4e76d91a842b0cdb0f2f77ad63bf97d2e326ee4ad293f", size = 998318, upload-time = "2026-09-03T11:33:05.831Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/e4/4e/9842252bdf907f0993be1d86e49806ceb6ff9ff3d8f29afb2a03f47602ed/deism-2.2.1.15-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:4095b89f10a6088a9ee95b32d9026bc7123409ddfd32f8a82157afffb86a3f5d", size = 613656, upload-time = "2026-08-08T12:20:01.051Z" },
-    { url = "https://files.pythonhosted.org/packages/a5/96/cea7334ed7ea0dd01df8b3fe2164f384aa031b5012e4aaeddd5007b255bc/deism-2.2.1.15-cp311-cp311-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:46ce9bffcddbd521ab4a88943faac530d313c9fc261cfda97d94bd46ff4facd5", size = 16587728, upload-time = "2026-08-08T12:20:02.879Z" },
-    { url = "https://files.pythonhosted.org/packages/93/54/2038c7bd2b5ea11c87456f68838ede1c12793556365b928d6299904e2a02/deism-2.2.1.15-cp311-cp311-win_amd64.whl", hash = "sha256:388d17c7b0cc749681ede7f5d4632a5a65bc60dcc03eed9d8f28a0378ed4cbde", size = 515966, upload-time = "2026-08-08T12:20:04.893Z" },
-    { url = "https://files.pythonhosted.org/packages/10/a5/6560c094790f388af30d471dc2d77905581c408f13e53c366e653a1a98f2/deism-2.2.1.15-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:214c8055fb8d8004d94e03539e32a5a03088de3d213f5580a5442de3c13f8169", size = 618440, upload-time = "2026-08-08T12:20:06.1Z" },
-    { url = "https://files.pythonhosted.org/packages/fa/8d/013cef46eb754e401fcd429c2a9ce8102084c90fcf607c404b23f5548941/deism-2.2.1.15-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:cf9bd051afa6bfcfbe04d5edceafe0415653c4b1154a674372c1e466e7b137cc", size = 16703423, upload-time = "2026-08-08T12:20:08.684Z" },
-    { url = "https://files.pythonhosted.org/packages/3a/c5/6b9e61e553946e0ce17c930378ce40d7d6d767d843fb053b6597dbc5ba8b/deism-2.2.1.15-cp312-cp312-win_amd64.whl", hash = "sha256:5fc13a37ad63cf944655a6475c54d8f49526fdb43d09d02021efcebce049cf63", size = 520318, upload-time = "2026-08-08T12:20:10.817Z" },
+    { url = "https://files.pythonhosted.org/packages/65/7d/b3deea5f11db14db761830786e6b14c258528bcce0e4d65b5c6c808303c1/deism-2.2.1.16-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:96ed1193c9b51ec7f677cf8a665beb77469ee0bd2ee9389276ad68c33dabd858", size = 622485, upload-time = "2026-09-03T11:32:55.842Z" },
+    { url = "https://files.pythonhosted.org/packages/ae/dc/256a527a36b2041249276eec1a78237b44e32d0ffff3e9984e158e12b158/deism-2.2.1.16-cp311-cp311-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:436a456ade8749949d755a425fca02c378981bb05f9b9bd7dace8cd540199b15", size = 16596559, upload-time = "2026-09-03T11:32:57.424Z" },
+    { url = "https://files.pythonhosted.org/packages/d0/cf/c098acd81d3ee2a1eed4cfb875e13abe4f58831504c781471d16db3629de/deism-2.2.1.16-cp311-cp311-win_amd64.whl", hash = "sha256:c0e7b45c078bcceb98eb775a4e7efa99857a5d1dd366e6b2a57b586594756f30", size = 524829, upload-time = "2026-09-03T11:32:59.689Z" },
+    { url = "https://files.pythonhosted.org/packages/ea/50/dd56203c18be7fbc90ea0462901423b300c2baf84b68a80d40be09ba1e8b/deism-2.2.1.16-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:cf64855a0806f416c5a47aa3fd07b00e080e3aac73a23e3d0daaeed20ce077e8", size = 627263, upload-time = "2026-09-03T11:33:00.924Z" },
+    { url = "https://files.pythonhosted.org/packages/dc/8b/04d440f81039a6773d9516c5a3e85ffac108b989468506a4ee44422ec8b2/deism-2.2.1.16-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:95046375d8c48386b8d135c8cd345527f333fbaf7338ecb868c0b9c752061dff", size = 16712252, upload-time = "2026-09-03T11:33:02.697Z" },
+    { url = "https://files.pythonhosted.org/packages/1e/a1/c90103f652a2a8735c15aeacdb9eb50cb43c713982cf912e6712acf8353f/deism-2.2.1.16-cp312-cp312-win_amd64.whl", hash = "sha256:a19167511e93fd5f633a09e3a585cf52618055918253b908a539554ab53782cf", size = 529195, upload-time = "2026-09-03T11:33:04.796Z" },
 ]
 
 [[package]]
@@ -585,7 +585,6 @@ version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "deism" },
-    { name = "gmsh" },
     { name = "matplotlib" },
     { name = "numpy" },
     { name = "requests" },
@@ -643,9 +642,8 @@ requires-dist = [
     { name = "build", marker = "extra == 'deploy'" },
     { name = "bump-my-version", marker = "extra == 'deploy'" },
     { name = "coverage", marker = "extra == 'tests'", specifier = ">=7.6.1" },
-    { name = "deism", specifier = "==2.2.1.15" },
+    { name = "deism", specifier = "==2.2.1.16" },
     { name = "deism-interface", extras = ["deploy", "tests", "docs"], marker = "extra == 'dev'" },
-    { name = "gmsh" },
     { name = "matplotlib" },
     { name = "numpy", specifier = ">=1.23.0" },
     { name = "pydata-sphinx-theme", marker = "extra == 'docs'" },
@@ -730,17 +728,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/34/3b/214dcc19ee31d3d38fb5ad2755c11ef0514e5dc300bbaf41c0b69f393799/fonttools-4.63.0-cp314-cp314t-win32.whl", hash = "sha256:948428a275741f0b64b113c955425a953314f4b9ab9997f73a72c83e68e569c8", size = 2359326, upload-time = "2026-05-14T12:04:24.22Z" },
     { url = "https://files.pythonhosted.org/packages/dd/1e/3ff1a9b523058c2eeb6a9d50f5574e2a738200d0d94107d5bc4105e8da3f/fonttools-4.63.0-cp314-cp314t-win_amd64.whl", hash = "sha256:6d4741eb179121cab9eea4cb2393d24492373a260d7945006358c08cfbf45419", size = 2425829, upload-time = "2026-05-14T12:04:26.829Z" },
     { url = "https://files.pythonhosted.org/packages/2c/47/c99d5268f354002ce80f8d029cd9d7d872969da1de8b93d32de4dc56d6f4/fonttools-4.63.0-py3-none-any.whl", hash = "sha256:445af2eab030a16b9171ea8bdda7ebf7d96bda2df88ee182a464252f6e05e20d", size = 1164562, upload-time = "2026-05-14T12:04:29.092Z" },
-]
-
-[[package]]
-name = "gmsh"
-version = "4.15.2"
-source = { registry = "https://pypi.org/simple" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/19/a6/f3f74f53234c812ffa0191ce2aceb0811ea82bdf12867a73bebb03f28f7a/gmsh-4.15.2-py2.py3-none-macosx_10_15_x86_64.whl", hash = "sha256:9f5a97b6633e40be331cb777ab571cef96e6ff5979bb7b20aad2438724ca417b", size = 40171095, upload-time = "2026-03-24T19:33:46.37Z" },
-    { url = "https://files.pythonhosted.org/packages/3d/b4/0d25938ad62ea4db6bcbdecbc77c72d05d8a6a679abe4addcd86167ffd77/gmsh-4.15.2-py2.py3-none-macosx_12_0_arm64.whl", hash = "sha256:f6649b3e59f49272e7ee8ab282ecb4d1a6e0d627e86cf3e3b1a83fd07417e4f8", size = 36427761, upload-time = "2026-03-24T19:33:51.161Z" },
-    { url = "https://files.pythonhosted.org/packages/ab/d4/336becb1488ac4fbab205043987128839c8c62d54e2036b7e887bd009040/gmsh-4.15.2-py2.py3-none-manylinux_2_24_x86_64.whl", hash = "sha256:4076a948ce22625330d1413d4982e22b5c69fc2f0f7951f5df64c778cf54108c", size = 40006930, upload-time = "2026-03-24T19:33:55.549Z" },
-    { url = "https://files.pythonhosted.org/packages/78/e9/63c763c0d75544680800651d5ea8c7c3203ae4b5e054706f19a54021a7fb/gmsh-4.15.2-py2.py3-none-win_amd64.whl", hash = "sha256:7b36083bb410fa27c5d0e052929d1a9844a5b09169d66017b72b41aabd49d711", size = 42235999, upload-time = "2026-03-24T19:34:00.529Z" },
 ]
 
 [[package]]
@@ -1225,6 +1212,19 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/d6/54/cfe61301667036ec958cb99bd3efefba235e65cdeb9c84d24a8293ba1d90/mdurl-0.1.2.tar.gz", hash = "sha256:bb413d29f5eea38f31dd4754dd7377d4465116fb207585f97bf925588687c1ba", size = 8729, upload-time = "2022-08-14T12:40:10.846Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/b3/38/89ba8ad64ae25be8de66a6d463314cf1eb366222074cfda9ee839c56a4b4/mdurl-0.1.2-py3-none-any.whl", hash = "sha256:84008a41e51615a49fc9966191ff91509e3c40b939176e643fd50a5c2196b8f8", size = 9979, upload-time = "2022-08-14T12:40:09.779Z" },
+]
+
+[[package]]
+name = "meshio"
+version = "5.3.5"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "numpy" },
+    { name = "rich" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/20/1e/caa4f15c020de3e3486b4133ca689236bd3863a3d6dd0f58e97ce86a296a/meshio-5.3.5.tar.gz", hash = "sha256:f21f01abd9f29ba06ea119304b3d39e610421cfe93b9dd23362834919f87586d", size = 490922, upload-time = "2024-01-31T15:09:41.731Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/89/5f/39cbadc320cd78f4834b0a9f7a2fa3c980dca942bf193f315837eacb8870/meshio-5.3.5-py3-none-any.whl", hash = "sha256:0736c6e34ecc768f62f2cde5d8233a3529512a9399b25c68ea2ca0d5900cdc10", size = 166162, upload-time = "2024-01-31T15:09:36.691Z" },
 ]
 
 [[package]]

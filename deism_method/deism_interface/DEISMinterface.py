@@ -7,7 +7,6 @@ import traceback
 from contextlib import contextmanager, redirect_stdout
 from pathlib import Path
 
-import gmsh
 import matplotlib.pyplot as plt
 import numpy as np
 from deism.core_deism import DEISM
@@ -17,7 +16,7 @@ from deism.data_loader import (
     detect_conflicts,
     update_n1_n2_n3,
 )
-from deism.room_check import get_room_geometry, sync_room_geometry
+from deism.room_check import sync_room_geometry
 
 from .definition import SimulationMethod
 
@@ -60,34 +59,6 @@ DEISM_JSON_KEY_MAP = {
     "DEISM_method": ("DEISM_method", str),
     "qFlowStrength": ("qFlowStrength", float),
 }
-
-def create_vgroups_names(file_path):
-    """List the Gmsh physical-group tags and their material names.
-
-    Parameters
-    ----------
-    file_path : str
-        Full path to the mesh file.
-
-    Returns
-    -------
-    list
-        ``[dim, tag, name]`` entries for every physical group in the mesh
-        (the name matches the material name assigned in the CHORAS
-        geometry editor).
-    """
-    gmsh.initialize()
-    try:
-        gmsh.open(file_path)
-        vgroups = gmsh.model.getPhysicalGroups(-1)
-        vgroups_names = []
-        for dim_group, tag_group in vgroups:
-            name_group = gmsh.model.getPhysicalName(dim_group, tag_group)
-            vgroups_names.append([dim_group, tag_group, name_group])
-        return vgroups_names
-    finally:
-        gmsh.finalize()
-
 
 def parse_value(val):
     """Parse a comma-separated string or scalar into a numpy array."""
@@ -213,8 +184,12 @@ def use_real_stdio():
             fallback_stream.close()
 
 
-def get_deism_surface_order(vgroups_names, wall_centers_loaded):
+def get_deism_surface_order(surface_names, wall_centers_loaded):
     """Return the wall surface names in a deterministic order.
+
+    ``surface_names`` are the named physical surfaces of the room, i.e. the
+    keys of the ``wall_centers`` mapping that ``deism.room_check`` writes into
+    the input JSON (one entry per wall, named after the CHORAS material key).
 
     CHORAS rooms take DEISM's convex/ARG path, which re-matches each wall to
     its absorption value by centroid proximity (see ``deism.core_deism_arg``).
@@ -223,10 +198,10 @@ def get_deism_surface_order(vgroups_names, wall_centers_loaded):
     a closed 3-D polyhedron has at least 4 faces. The specific order is
     irrelevant to the physics as long as each surface's absorption stays
     paired with its own centroid -- which the caller guarantees by keying both
-    off the same surface name. We sort by centroid so the result no longer
-    depends on Gmsh physical-tag declaration order.
+    off the same surface name. We sort by centroid so the result does not
+    depend on the physical-tag declaration order of the mesh.
     """
-    surface_names = [name for dim, tag, name in vgroups_names if int(dim) == 2]
+    surface_names = list(surface_names)
     if len(surface_names) < 4:
         raise ValueError(
             f"DEISM requires at least 4 wall surfaces (closed polyhedron), "
@@ -341,6 +316,21 @@ class DeismMethod(SimulationMethod):
         """Run the DEISM simulation described by `json_file_path`."""
         print("deism_method: starting simulation")
 
+        # Resolve all paths before changing directory below. A relative
+        # ``msh_path`` is taken relative to the JSON file's directory, so a
+        # JSON plus mesh in one folder works from any working directory
+        # (CHORAS itself always writes absolute paths).
+        json_file_path = os.path.abspath(json_file_path)
+        json_dir = os.path.dirname(json_file_path)
+        with open(json_file_path, "r") as json_file:
+            result_container = json.load(json_file)
+        # Since deism 2.2.1.16 the geometry reader is meshio-based and
+        # accepts only a pre-generated ``.msh`` file (the CHORAS backend
+        # meshes the ``.geo`` and writes both paths into this JSON).
+        msh_path = result_container["msh_path"]
+        if not os.path.isabs(msh_path):
+            msh_path = os.path.normpath(os.path.join(json_dir, msh_path))
+
         # DEISM writes plots/temp files relative to the current working
         # directory; run from the package directory like the other methods.
         script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -348,18 +338,14 @@ class DeismMethod(SimulationMethod):
         os.chdir(script_dir)
 
         try:
-            with open(json_file_path, "r") as json_file:
-                result_container = json.load(json_file)
-            geo_path = result_container["geo_path"]
 
             # Populate result_container["geometry"] (vertices, wall
-            # centers, areas, volume) from the mesh file.
-            sync_room_geometry(json_file_path, geo_path)
-            # `get_room_geometry` is still called for its validation: since
-            # deism 2.2.1.14 it raises for a room that is neither shoebox nor
-            # convex. Its returned room type is deliberately discarded -- see
-            # the `"convex"` pin at `create_deism_instance` below.
-            get_room_geometry(geo_file=geo_path)
+            # centers, areas, volume) from the mesh file. This also validates
+            # the room: since deism 2.2.1.14 it raises for a room that is
+            # neither shoebox nor convex. The returned room type is
+            # deliberately discarded -- see the `"convex"` pin at
+            # `create_deism_instance` below.
+            sync_room_geometry(json_file_path, msh_path)
 
             with open(json_file_path, "r") as json_file:
                 result_container = json.load(json_file)
@@ -367,8 +353,6 @@ class DeismMethod(SimulationMethod):
 
             if check_should_cancel(json_file_path):
                 return
-
-            vgroups_names = create_vgroups_names(result_container["geo_path"])
 
             simulation_settings = result_container.get("simulationSettings", {})
             coord_source = [
@@ -392,7 +376,11 @@ class DeismMethod(SimulationMethod):
             room_volume = result_container["geometry"][0]["room_volume"]
             room_areas_loaded = result_container["geometry"][0]["room_areas"]
 
-            wall_order = get_deism_surface_order(vgroups_names, wall_centers_loaded)
+            # The wall names are the keys `sync_room_geometry` wrote: one named
+            # physical surface per wall of the convex room.
+            wall_order = get_deism_surface_order(
+                wall_centers_loaded.keys(), wall_centers_loaded
+            )
             num_walls = len(wall_order)
             absorption_coefficients = np.zeros((num_walls, len(freq_bands)))
             wall_centers = np.zeros((num_walls, 3))
