@@ -58,9 +58,9 @@ RUN mkdir -p /opt/misuka && cd /opt/misuka && \
     git remote add origin https://github.com/misuka-renderer/misuka.git && \
     for i in 1 2 3 4 5; do \
         git fetch --depth 1 origin lgpl && break; \
+        if [ "$i" = "5" ]; then echo "fetch failed (attempt $i/5), giving up." >&2; exit 1; fi; \
         echo "fetch failed (attempt $i/5), retrying in $((i*10))s..." >&2; \
         sleep $((i*10)); \
-        [ "$i" = "5" ] && exit 1; \
     done && \
     git checkout FETCH_HEAD && \
     for i in 1 2 3 4 5; do \
