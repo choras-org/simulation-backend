@@ -50,13 +50,25 @@ ENV CMAKE_C_COMPILER_LAUNCHER=ccache
 RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 1
 RUN python3.11 -m pip install --upgrade pip typing_extensions
 
-# Shallow clone of misuka from the lgpl branch
+# GitHub limits rate of unauthenticated fetches
+# Checkout branches sequentially, instead of at once
+# Retry fetching and submodule update up to 5 times, with increasing wait intervals
 RUN mkdir -p /opt/misuka && cd /opt/misuka && \
     git init && \
     git remote add origin https://github.com/misuka-renderer/misuka.git && \
-    git fetch --depth 1 origin lgpl && \
+    for i in 1 2 3 4 5; do \
+        git fetch --depth 1 origin lgpl && break; \
+        echo "fetch failed (attempt $i/5), retrying in $((i*10))s..." >&2; \
+        sleep $((i*10)); \
+        [ "$i" = "5" ] && exit 1; \
+    done && \
     git checkout FETCH_HEAD && \
-    git submodule update --init --recursive --depth 1
+    for i in 1 2 3 4 5; do \
+        git submodule update --init --recursive --depth 1 --jobs 1 && break; \
+        echo "submodule update failed (attempt $i/5), retrying in $((i*10))s..." >&2; \
+        sleep $((i*10)); \
+        [ "$i" = "5" ] && exit 1; \
+    done
 
 # Build misuka from source, with ccache to speed up rebuilds
 RUN --mount=type=cache,target=/root/.ccache \
