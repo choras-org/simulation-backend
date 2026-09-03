@@ -17,7 +17,6 @@ logger = logging.getLogger(__name__)
 mi.set_variant("llvm_ad_acoustic")
 
 from .definition import SimulationMethod
-from . import parametric as pra
 
 class misukaMethod(SimulationMethod):
     """Interface class to run the misuka method.
@@ -205,12 +204,12 @@ class misukaMethod(SimulationMethod):
                     etc_signal.times, np.clip(etc_time, 0, None), times_target,
                 )
 
-                times_of_arrival = pra.time_of_arrival_poisson_process(
+                times_of_arrival = pr.parametric.time_of_arrival_poisson_process(
                     room_volume, etc_signal.times,
                     speed_of_sound=speed_of_sound,
                     reflection_rate_limit=20e3,
                 )
-                reflection_sequence = pra.random_reflection_sequence(
+                reflection_sequence = pr.parametric.random_reflection_sequence(
                     times_of_arrival,
                     n_samples=n_samples,
                     sampling_rate=target_sampling_rate,
