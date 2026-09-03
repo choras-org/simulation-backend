@@ -9,7 +9,7 @@
             "min": 1000,
             "max": 4194304,
             "step": 524288,
-            "default": 1048576,
+            "default": 524288,
             "description": "Number of rays used for every frequency band in every source-reciever simulation."
         },
         {
@@ -37,6 +37,14 @@
             "description": "Sampling rate of the simulated histogram."
         },
         {
+            "name": "Propagation medium",
+            "id": "medium",
+            "display": "text",
+            "type": "string",
+            "default": "25.0, 0.6, 101825.0, 3200.0, 400.0",
+            "description": "Specifies atmospheric conditions used for Speed and Attenuation: temp, rel hum, atmo pres, sat vap pres, CO2. Use x for missing values."
+        },
+        {
             "name": "Speed of Sound",
             "id": "speed_of_sound",
             "display": "text",
@@ -47,6 +55,33 @@
             "default": 343,
             "endAdornment": "m/s",
             "description": "Speed of sound in m/s that is used in simulation."
+        },
+        {
+            "name": "Speed of Sound Calculation",
+            "id": "speed_method",
+            "type": "string",
+            "display": "radio",
+            "options": 
+            {
+                "Auto": "auto",
+                "Own Value": "own_value"
+            },
+            "default": "auto",
+            "description": "If 'auto' the most accurate method for the provided atmospheric input is chosen. Else the in Speed of Sound specified value is taken."
+        },
+        {
+            "name": "Apply Air Attenuation",
+            "id": "apply_attenuation",
+            "type": "string",
+            "display": "radio",
+            "options": 
+            {
+                "Apply": "true",
+                "Don't Apply": "false"
+            },
+            "default": "false",
+            "description": "If set to 'Apply', attenuation will be calculated with bin correct distances from temp, rel hum, atmo pres. Fails run if input is not provided."
+
         },
         {
             "name": "Scattering",
