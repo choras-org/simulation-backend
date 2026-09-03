@@ -51,7 +51,7 @@ RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 1
 RUN python3.11 -m pip install --upgrade pip typing_extensions
 
 # GitHub limits rate of unauthenticated fetches
-# Checkout branches sequentially, instead of at once
+# Update submodules sequentially, instead of in parallel
 # Retry fetching and submodule update up to 5 times, with increasing wait intervals
 RUN mkdir -p /opt/misuka && cd /opt/misuka && \
     git init && \
