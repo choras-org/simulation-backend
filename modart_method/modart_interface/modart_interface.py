@@ -490,7 +490,8 @@ class MoDARTMethod(SimulationMethod):
                             echogram_sample_rate=echogram_sample_rate,
                             T60_threshold=T60_threshold,
                             max_slopes_per_band=max_slopes_per_band,
-                            skip_T60_plots=True)
+                            skip_T60_plots=True,
+                            raise_on_failure=True)
         except Exception as exc:
             raise RuntimeError('Failed to run the modal analysis (environment pre-processing).') from exc
 
