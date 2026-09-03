@@ -1,6 +1,6 @@
 [project]
 name = "misuka_interface"
-version = "0.1.0"
+version = "0.1.1"
 description = ""
 requires-python = ">=3.11,<3.14"
 authors = [
@@ -65,7 +65,7 @@ dev = ["misuka_interface[deploy,tests,docs]"]
 # Source of truth for misuka_interface's release version, scoped-tagged so
 # it doesn't collide with the other methods sharing this repo.
 [tool.bumpversion]
-current_version = "0.1.0"
+current_version = "0.1.1"
 commit = true
 tag = true
 tag_name = "misuka-v{new_version}"
