@@ -1,0 +1,90 @@
+{
+    "type": "simulationSettings",
+    "options": [
+        {
+            "name": "Speed of sound",
+            "description": "The speed of sound in the room.",
+            "id": "speed_of_sound",
+            "type": "float",
+            "display": "text",
+            "min": 100,
+            "max": 500,
+            "default": 343,
+            "step": 1,
+            "endAdornment": "m/s"
+        },
+        {
+            "name": "ETC time resolution",
+            "description": "The time resolution, in seconds, of the energy-time curve.",
+            "id": "etc_time_resolution_s",
+            "type": "float",
+            "display": "text",
+            "min": 0.0001,
+            "max": 0.1,
+            "step": 0.001,
+            "default": 0.001,
+            "endAdornment": "s"
+        },
+        {
+            "name": "ETC duration",
+            "description": "The duration, in seconds, of the energy-time curve.",
+            "id": "etc_duration_s",
+            "type": "float",
+            "display": "text",
+            "min": 0.1,
+            "max": 10,
+            "step": 0.1,
+            "default": 1,
+            "endAdornment": "s"
+        },
+        {
+            "name": "Maximum reflection order",
+            "description": "The maximum reflection order. Higher values will slow down the simulation.",
+            "id": "max_reflection_order",
+            "type": "int",
+            "display": "text",
+            "min": 1,
+            "max": 500,
+            "step": 1,
+            "default": 30,
+            "endAdornment": ""
+        },
+        {
+            "name": "Patch size",
+            "description": "The length, in meters, of the surface mesh elements.",
+            "id": "patch_length",
+            "type": "float",
+            "display": "text",
+            "min": 0.01,
+            "max": 10,
+            "step": 0.01,
+            "default": 3,
+            "endAdornment": "m"
+        },
+        {
+            "name": "Source Power",
+            "description": "Sound power in watts.",
+            "id": "sound_power_W",
+            "type": "float",
+            "display": "text",
+            "min": 0,
+            "max": 10,
+            "step": 0.01,
+            "default": 0.0796,
+            "endAdornment": "W"
+        },
+        {
+            "name": "Sampling rate",
+            "description": "The sampling rate of the generated impulse response.",
+            "id": "sampling_rate",
+            "type": "int",
+            "display": "text",
+            "min": 4000,
+            "max": 98000,
+            "step": 100,
+            "default": 44100,
+            "endAdornment": "Hz"
+        }
+        
+    ]
+}

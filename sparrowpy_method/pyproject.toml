@@ -1,15 +1,17 @@
 [project]
-name = "modart_interface"
+name = "sparrowpy_interface"
 version = "0.1.0"
-description = "Python package implementing Acoustic Radiance Transfer and its Modal Decomposition."
-requires-python = ">=3.11"
+description = "Sound Propagation with Acoustic Radiosity for Realistic Outdoor Worlds"
+requires-python = ">=3.11,<3.15"
 authors = [
-    { name = "Matteo Scerbo", email = "matteo.scerbo@gmail.com" },
+    { name = "Anne Heimes", email = "ahe@akustik.rwth-aachen.de" },
 ]
 keywords = [
     "acoustic simulation",
     "geometrical acoustics",
     "acoustic radiance transfer",
+    "brdf",
+    "scattering",
 ]
 
 classifiers = [
@@ -23,12 +25,14 @@ classifiers = [
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
 ]
-
 dependencies = [
-    "raves>=0.2.2",
-    "gmsh==4.13.1",
+    "numpy>=1.23.0",
+    "sparrowpy>=1.1",
     "requests",
-    "numpy<2.5.0",
+    "gmsh",
+    "trimesh",
+    "pyfar",
+    "pyrato",
 ]
 
 [project.optional-dependencies]
@@ -58,17 +62,17 @@ docs = [
     "sphinx-reredirects",
 ]
 
-dev = ["modart_interface[deploy,tests,docs]"]
+dev = ["sparrowpy_interface[deploy,tests,docs]"]
 
 [build-system]
 requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
-packages = ["modart_interface"]
+packages = ["sparrowpy_interface"]
 
 [project.scripts]
-modart_interface = "modart_interface:main"
+sparrowpy_interface = "sparrowpy_interface:main"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
