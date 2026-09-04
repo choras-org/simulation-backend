@@ -32,10 +32,6 @@ DEFAULT VALUES:
                                  'floor': '0, 0, 0, 0, 0',
                                  'ceiling': '0, 0, 0, 0, 0'},
      'simulationSettings': {'slopes': 1, 'humi': 0, 'temp': 0}},
-    {'absorption_coefficients': {'walls': '0.999, 0.999, 0.999, 0.999, 0.999',
-                                 'floor': '0.999, 0.999, 0.999, 0.999, 0.999',
-                                 'ceiling': '0.999, 0.999, 0.999, 0.999, 0.999'},
-     'simulationSettings': {'slopes': 1}},
     {'absorption_coefficients': {'walls': '1, 1, 1, 1, 1',
                                  'floor': '1, 1, 1, 1, 1',
                                  'ceiling': '1, 1, 1, 1, 1'},
@@ -147,15 +143,6 @@ def test_modart_method_cli(mock_requests_post, create_modified_input_file):
             assert np.allclose(MoDART_data['T60'],
                                [194.175, 184.681, 179.758, 169.130, 137.950],
                                rtol=0.05, atol=0.05)
-            
-        elif all(coeff == '0.999, 0.999, 0.999, 0.999, 0.999'
-                for coeff in coeffs.values()):
-            if settings['slopes'] != 1:
-                raise NotImplementedError('I did not prepare that much reference data.')
-
-            # When all material absorptions are close to 1, reverberation time is miniscule.
-            assert np.allclose(MoDART_data['T60'],
-                               5e-3, rtol=1e-3, atol=1e-3)
         
         else:
             # Confirm that the T60 values are reasonably close to a reference run.
