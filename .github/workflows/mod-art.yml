@@ -1,0 +1,53 @@
+name: Mod-ART Method CI
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  uv-test:
+    name: Pytest for the mod-art runner
+    runs-on: ubuntu-latest
+    continue-on-error: true
+
+    strategy:
+      matrix:
+        python-version:
+          - "3.11"
+          - "3.12"
+          - "3.13"
+          - "3.14"
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libglu1-mesa libgl1 mesa-utils
+
+      - name: Run test for modart method
+        run: |
+          cd modart_method
+          uv run --extra tests pytest tests/
+
+  build-docker-image:
+    name: Build Docker Image
+    runs-on: ubuntu-latest
+    continue-on-error: true
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Build Docker Image
+        run: |
+          docker build -f modart_method/Dockerfile . --platform=linux/amd64 -t modart-method-test:latest

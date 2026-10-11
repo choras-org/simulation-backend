@@ -1,0 +1,130 @@
+{
+    "type": "simulationSettings",
+    "options": [
+        {
+            "name": "Response duration",
+            "description": "Duration of the returned impulse response, in seconds.",
+            "id": "durat",
+            "type": "float",
+            "display": "text",
+            "min": 1e-1,
+            "max": 1e1,
+            "default": 1e0,
+            "step": 1e-1,
+            "endAdornment": "s"
+        },
+        {
+            "name": "Echogram sample rate",
+            "description": "Sample rate used to compute the echogram (energy response envelope). COMPLETELY UNRELATED TO THE AURALIZATION SAMPLE RATE. Higher values will produce more accurate results, but the decomposition will take longer.",
+            "id": "f_e",
+            "type": "float",
+            "display": "text",
+            "min": 5e1,
+            "max": 5e4,
+            "default": 5e3,
+            "step": 5e1,
+            "endAdornment": "Hz"
+        },
+        {
+            "name": "Auralization sample rate",
+            "description": "Sample rate used to produce the auralization RIR.",
+            "id": "sampling_rate",
+            "type": "float",
+            "display": "text",
+            "min": 5e1,
+            "max": 5e4,
+            "default": 44.1e3,
+            "step": 1e2,
+            "endAdornment": "Hz"
+        },
+        {
+            "name": "T60 threshold",
+            "description": "The decomposition (in each band) will stop after locating all energy modes with longer reverberation times than this.",
+            "id": "T60",
+            "type": "float",
+            "display": "text",
+            "min": 1e-3,
+            "max": 1e1,
+            "default": 1e-1,
+            "step": 1e-2,
+            "endAdornment": "s"
+        },
+        {
+            "name": "Max slopes",
+            "description": "The decomposition (in each band) will stop after locating this many energy modes, even if the T60 threshold has not been reached.",
+            "id": "slopes",
+            "type": "int",
+            "display": "text",
+            "min": 1,
+            "max": 100,
+            "default": 10,
+            "step": 1
+        },
+        {
+            "name": "Air humidity",
+            "id": "humi",
+            "type": "float",
+            "display": "text",
+            "min": 0.0,
+            "max": 100.0,
+            "default": 50.0,
+            "step": 5.0,
+            "endAdornment": "%"
+        },
+        {
+            "name": "Air temperature",
+            "id": "temp",
+            "type": "float",
+            "display": "text",
+            "min": -100.0,
+            "max": 100.0,
+            "default": 20.0,
+            "step": 1.0,
+            "endAdornment": "°C"
+        },
+        {
+            "name": "Atmospheric pressure",
+            "id": "pres",
+            "type": "float",
+            "display": "text",
+            "min": 50.0,
+            "max": 150.0,
+            "default": 100.0,
+            "step": 0.1,
+            "endAdornment": "kPa"
+        },
+        {
+            "name": "Points per square meter",
+            "description": "Density of surface sample points used for the numerical area integration.",
+            "id": "ppsm",
+            "type": "float",
+            "display": "text",
+            "min": 0,
+            "max": 100.0,
+            "default": 30.0,
+            "step": 0.1
+        },
+        {
+            "name": "Rays per hemisphere",
+            "description": "Density of sample directions used for the numerical solid angle integration.",
+            "id": "rays",
+            "type": "int",
+            "display": "text",
+            "min": 10,
+            "max": 10000,
+            "default": 1000,
+            "step": 100
+        },
+        {
+            "name": "Max parallel processes",
+            "description": "Cap to the number of processes spawned for the numerical integration.",
+            "id": "pool",
+            "type": "int",
+            "display": "text",
+            "min": 1,
+            "max": 10000,
+            "default": 4,
+            "step": 1
+        }
+    ]
+}

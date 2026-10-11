@@ -1,6 +1,6 @@
 [project]
 name = "pyroomacoustics_interface"
-version = "0.1.0"
+version = "0.0.1"
 description = "Python package for acoustics research."
 requires-python = ">=3.11"
 authors = [
@@ -64,6 +64,21 @@ docs = [
 ]
 
 dev = ["pyroomacoustics_interface[deploy,tests,docs]"]
+
+# Source of truth for pyroomacoustics_interface's release version,
+# scoped-tagged so it doesn't collide with the other methods sharing this repo.
+[tool.bumpversion]
+current_version = "0.0.1"
+commit = true
+tag = true
+tag_name = "pyroomacoustics-v{new_version}"
+message = "Bump pyroomacoustics_interface version: {current_version} → {new_version}"
+tag_message = "Bump pyroomacoustics_interface version: {current_version} → {new_version}"
+
+[[tool.bumpversion.files]]
+filename = "pyproject.toml"
+search = "version = \"{current_version}\""
+replace = "version = \"{new_version}\""
 
 [build-system]
 requires = ["setuptools>=61.0", "wheel"]
