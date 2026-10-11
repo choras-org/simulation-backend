@@ -69,6 +69,7 @@ class misukaMethod(SimulationMethod):
             simulation_settings = result_container["simulationSettings"]
             speed_of_sound = simulation_settings["speed_of_sound"]
             max_time = simulation_settings["max_time"]
+            max_energy_loss = float(simulation_settings.get("max_energy_loss", 100))
             time_bins = simulation_settings["sampling_rate"]
             rpf = simulation_settings["rays_per_frequency"]
             n_receivers = len(result_container["results"][0]["responses"])
@@ -120,7 +121,7 @@ class misukaMethod(SimulationMethod):
         # set up the integrator, using whatever medium properties are available;
         # speed_of_sound is reassigned to the value actually used to render the ETC, so the
         # reflection-density synthesis below stays consistent with it (see build_acoustic_integrator)
-        integrator_acoustic, speed_of_sound = build_acoustic_integrator(medium, max_time, speed_method, speed_of_sound, apply_attenuation)
+        integrator_acoustic, speed_of_sound = build_acoustic_integrator(medium, max_time, speed_method, speed_of_sound, apply_attenuation, max_energy_loss)
 
         # reconstructing filter bank for RIR synthesis from the per-band ETC envelope;
         # only depends on frequencies/target_sampling_rate, so build it once
@@ -584,7 +585,7 @@ def fetch_medium_properties(
 # include/mitsuba/core/acoustic.h, not exposed to Python): the values misuka
 # uses for every acoustic_medium field that is not given.
 MISUKA_STANDARD_MEDIUM = dict(temperature=25.0, relative_humidity=0.6,
-                              atmospheric_pressure=101825.0,
+                              atmospheric_pressure=101325.0,
                               saturation_vapor_pressure=3167.0, co2_ppm=400.0)
 SPEED_METHODS = ("simple", "ideal_gas", "cramer")
 # The GUI offers the method as a number 1-4 (a radio group with four options
@@ -598,6 +599,7 @@ def build_acoustic_integrator(
     speed_method: str,
     speed_of_sound: float,
     apply_attenuation: bool | None = None,
+    max_energy_loss: float = 100.0,
 ):
     """Parse the medium string and initialize misuka's ``acoustic_path`` integrator.
 
@@ -629,6 +631,8 @@ def build_acoustic_integrator(
         temperature, relative humidity and atmospheric pressure to compute
         attenuation; missing ones take misuka's standard-medium values.
         If None (default), misuka's own default applies.
+    max_energy_loss : float, optional
+        Energy loss in dB after which a path is terminated (default 100).
 
     Returns
     -------
@@ -653,6 +657,7 @@ def build_acoustic_integrator(
         "type": "acoustic_path",
         "max_depth": -1,  # maximum path depth (-1 = no limit, 1 = direct sound only, 2 = up to 1 reflection, etc.)
         "max_time": max_time,  # maximum propagation time in seconds
+        "max_energy_loss": max_energy_loss,  # dB; misuka's own default (60) cuts the late tail
     }
 
     acoustic_medium = {}

@@ -13,7 +13,7 @@
         "rays_per_frequency": 524288,
         "max_time": 0.1,
         "sampling_rate": 20000,
-        "medium":"25.0, 0.6, 101825.0, 3200.0, 400.0",
+        "medium":"25.0, 0.6, 101325.0, 3200.0, 400.0",
         "speed_method": 1,
         "speed_of_sound": 343,
         "apply_attenuation": "false",
