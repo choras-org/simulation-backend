@@ -9,7 +9,7 @@
             "min": 1000,
             "max": 4194304,
             "step": 524288,
-            "default": 1048576,
+            "default": 524288,
             "description": "Number of rays used for every frequency band in every source-reciever simulation."
         },
         {
@@ -30,11 +30,19 @@
             "type": "integer",
             "display": "text",
             "min": 100,
-            "max": 40000,
+            "max": 44100,
             "step": 1000,
             "default": 20000,
             "endAdornment": "Hz",
             "description": "Sampling rate of the simulated histogram."
+        },
+        {
+            "name": "Propagation medium",
+            "id": "medium",
+            "display": "text",
+            "type": "string",
+            "default": "25.0, 0.6, 101325.0, 3200.0, 400.0",
+            "description": "Specifies atmospheric conditions used for Speed and Attenuation: temp, rel hum, atmo pres, sat vap pres, CO2. Use x for missing values."
         },
         {
             "name": "Speed of Sound",
@@ -49,6 +57,43 @@
             "description": "Speed of sound in m/s that is used in simulation."
         },
         {
+            "name": "Maximum Energy Loss",
+            "id": "max_energy_loss",
+            "type": "integer",
+            "display": "text",
+            "min": 1,
+            "max": 200,
+            "step": 10,
+            "default": 100,
+            "endAdornment": "dB",
+            "description": "A path is terminated once it has lost this much energy. 100 dB (as in Richter's comparison with RAVEN) leaves enough margin for T30; lower values cut the late reverberation and bias T30 short."
+        },
+        {
+            "name": "Speed of Sound Method",
+            "id": "speed_method",
+            "type": "integer",
+            "display": "text",
+            "min": 1,
+            "max": 4,
+            "step": 1,
+            "default": 1,
+            "description": "1 = Simple: ISO 9613-1, temperature only. 2 = Ideal Gas: temperature, humidity and pressure. 3 = Cramer: temperature, humidity, pressure and CO2. 4 = Own Value: the value given in Speed of Sound. Missing medium values are taken from misuka's standard medium (25 C, 60 % RH, 101325 Pa, 3167 Pa, 400 ppm)."
+        },
+        {
+            "name": "Apply Air Attenuation",
+            "id": "apply_attenuation",
+            "type": "string",
+            "display": "radio",
+            "options": 
+            {
+                "Apply": "true",
+                "Don't Apply": "false"
+            },
+            "default": "false",
+            "description": "If set to 'Apply', attenuation will be calculated with bin correct distances from temp, rel hum, atmo pres. Fails run if input is not provided."
+
+        },
+        {
             "name": "Scattering",
             "id": "scattering_coefficients",
             "display": "text",
@@ -60,17 +105,6 @@
     ],
 
     "_future_options": [
-        {
-            "name": "Maximum Energy Loss",
-            "id": "max_energy_loss",
-            "type": "integer", 
-            "display": "text",
-            "min": 0,
-            "max": 100,
-            "step": 1,
-            "default": 50,
-            "endAdornment": "%"
-        },
         {
             "name": "Processing Unit",
             "id": "comp_backend",
