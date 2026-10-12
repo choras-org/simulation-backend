@@ -69,7 +69,7 @@ class misukaMethod(SimulationMethod):
             simulation_settings = result_container["simulationSettings"]
             speed_of_sound = simulation_settings["speed_of_sound"]
             max_time = simulation_settings["max_time"]
-            max_energy_loss = float(simulation_settings.get("max_energy_loss", 100))
+            max_energy_loss = float(simulation_settings["max_energy_loss"])
             time_bins = simulation_settings["sampling_rate"]
             rpf = simulation_settings["rays_per_frequency"]
             n_receivers = len(result_container["results"][0]["responses"])
