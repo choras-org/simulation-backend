@@ -584,9 +584,9 @@ def fetch_medium_properties(
 # misuka's standard medium (acoustic_medium_standard_* in misuka's
 # include/mitsuba/core/acoustic.h, not exposed to Python): the values misuka
 # uses for every acoustic_medium field that is not given.
-MISUKA_STANDARD_MEDIUM = dict(temperature=25.0, relative_humidity=0.6,
+MISUKA_STANDARD_MEDIUM = dict(temperature=20.0, relative_humidity=0.5,
                               atmospheric_pressure=101325.0,
-                              saturation_vapor_pressure=3167.0, co2_ppm=400.0)
+                              saturation_vapor_pressure=2333.0, co2_ppm=428.73)
 SPEED_METHODS = ("simple", "ideal_gas", "cramer")
 # The GUI offers the method as a number 1-4 (a radio group with four options
 # does not fit the settings panel); method names are accepted as well.
