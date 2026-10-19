@@ -12,12 +12,12 @@ import pandas as pd
 import os
 from pathlib import Path
 import logging
+import warnings
 logger = logging.getLogger(__name__)
 
 mi.set_variant("llvm_ad_acoustic")
 
 from .definition import SimulationMethod
-from . import parametric as pra
 
 class misukaMethod(SimulationMethod):
     """Interface class to run the misuka method.
@@ -69,6 +69,7 @@ class misukaMethod(SimulationMethod):
             simulation_settings = result_container["simulationSettings"]
             speed_of_sound = simulation_settings["speed_of_sound"]
             max_time = simulation_settings["max_time"]
+            max_energy_loss = float(simulation_settings["max_energy_loss"])
             time_bins = simulation_settings["sampling_rate"]
             rpf = simulation_settings["rays_per_frequency"]
             n_receivers = len(result_container["results"][0]["responses"])
@@ -76,6 +77,10 @@ class misukaMethod(SimulationMethod):
             msh_path = result_container["msh_path"]
             absorption_map = result_container["absorption_coefficients"]
             scattering_str = simulation_settings["scattering_coefficients"]
+            medium = simulation_settings["medium"]
+            speed_method = SPEED_METHOD_BY_NUMBER.get(str(simulation_settings["speed_method"]),
+                                                      simulation_settings["speed_method"])
+            apply_attenuation = simulation_settings.get("apply_attenuation") == "true"
         except KeyError as e:
             raise KeyError(f"Missing required key in the input JSON file: {e}")
 
@@ -86,9 +91,8 @@ class misukaMethod(SimulationMethod):
         logger.info(f'Input value for rays per frequency: {rpf}')
         logger.info(f'Input value for maximum response length: {max_time}')
         logger.info(f'Input value for time_bins: {time_bins}')
-        logger.info(f'Input value for speed of sound: {speed_of_sound}')
         logger.info(f'Input values for absorption: {absorption_map}')
-        
+
         frequency_range = (float(np.min(frequencies)), float(np.max(frequencies)))
         f_center, f_lower, f_upper = pf.constants.fractional_octave_frequencies_exact(1, frequency_range)
         assert np.all(np.abs(f_center-frequencies)/frequencies < 1e-2), "Frequency mismatch between input frequencies and pyrato's fractional octave frequencies"
@@ -114,17 +118,10 @@ class misukaMethod(SimulationMethod):
         # updating percentage of progress
         set_progress_and_save(25, result_container, self.input_json_path)
 
-        # set up the integrator
-        integrator_acoustic = mi.load_dict(
-            {
-                "type": "acoustic_path",
-                "speed_of_sound": speed_of_sound,
-                "max_depth": -1,  # maximum path depth (-1 = no limit, 1 = direct sound only, 2 = up to 1 reflection, etc.)
-                "max_time": max_time,  # maximum propagation time in seconds
-            }
-        )
-
-        logger.info(f'Integrator Setup: {integrator_acoustic}')
+        # set up the integrator, using whatever medium properties are available;
+        # speed_of_sound is reassigned to the value actually used to render the ETC, so the
+        # reflection-density synthesis below stays consistent with it (see build_acoustic_integrator)
+        integrator_acoustic, speed_of_sound = build_acoustic_integrator(medium, max_time, speed_method, speed_of_sound, apply_attenuation, max_energy_loss)
 
         # reconstructing filter bank for RIR synthesis from the per-band ETC envelope;
         # only depends on frequencies/target_sampling_rate, so build it once
@@ -194,6 +191,25 @@ class misukaMethod(SimulationMethod):
 
                 edc = pr.edc.schroeder_integration(etc_signal, is_energy=True)
                 edc_normalized = pf.dsp.normalize(edc)
+
+                # ISO 3382-1 evaluates C80, D50 and Ts from the start of the
+                # impulse response (the direct sound), not from emission --
+                # otherwise the source-receiver propagation delay is counted
+                # into the early windows. Detected on the rendered ETC, not on
+                # the synthesised RIR below (random reflection timing, filter
+                # delay), once on the band sum since the direct sound arrives in
+                # all bands at the same time. pyfar squares its input, so the
+                # energy is passed as sqrt to keep ISO's 20 dB threshold.
+                etc_broadband = np.sum(etc_signal.time.reshape(-1, etc_signal.n_samples), axis=0)
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore")  # SNR heuristic assumes a measured noise tail
+                    start_sample = int(np.ravel(pf.dsp.find_impulse_response_start(
+                        pf.Signal(np.sqrt(np.clip(etc_broadband, 0, None)),
+                                  etc_signal.sampling_rate)))[0])
+                etc_from_start = pf.Signal(etc_signal.time[..., start_sample:],
+                                           etc_signal.sampling_rate)
+                edc_params = pr.edc.schroeder_integration(etc_from_start, is_energy=True)
+                edc_params_normalized = pf.dsp.normalize(edc_params)
                 with np.errstate(divide='ignore', invalid='ignore'):
                     edc_normalized_db = 10*np.log10(edc_normalized.time/1e-12)
                 edc_normalized_db = np.squeeze(edc_normalized_db, axis=0)
@@ -210,12 +226,12 @@ class misukaMethod(SimulationMethod):
                     etc_signal.times, np.clip(etc_time, 0, None), times_target,
                 )
 
-                times_of_arrival = pra.time_of_arrival_poisson_process(
+                times_of_arrival = pr.parametric.time_of_arrival_poisson_process(
                     room_volume, etc_signal.times,
                     speed_of_sound=speed_of_sound,
                     reflection_rate_limit=20e3,
                 )
-                reflection_sequence = pra.random_reflection_sequence(
+                reflection_sequence = pr.parametric.random_reflection_sequence(
                     times_of_arrival,
                     n_samples=n_samples,
                     sampling_rate=target_sampling_rate,
@@ -239,30 +255,30 @@ class misukaMethod(SimulationMethod):
                 ]
 
                 with np.errstate(divide='ignore', invalid='ignore'):
-                    t20 = np.squeeze(pr.parameters.reverberation_time_linear_regression(edc, 'T20'))
+                    t20 = np.squeeze(pr.parameters.reverberation_time_linear_regression(edc_params_normalized, 'T20'))
                     t20 = finite_array(t20, nan=0.0, neginf=0.0, posinf=0.0)
                     result_container["results"][0]["responses"][i_rec]["parameters"]['t20'] = t20.tolist()
 
-                    t30 = np.squeeze(pr.parameters.reverberation_time_linear_regression(edc, 'T30'))
+                    t30 = np.squeeze(pr.parameters.reverberation_time_linear_regression(edc_params_normalized, 'T30'))
                     t30 = finite_array(t30, nan=0.0, neginf=0.0, posinf=0.0)
                     result_container["results"][0]["responses"][i_rec]["parameters"]['t30'] = t30.tolist()
 
-                    c80 = np.squeeze(pr.parameters.clarity(edc, 80))
+                    c80 = np.squeeze(pr.parameters.clarity(edc_params, 80))
                     c80 = finite_array(c80, nan=0.0, neginf=0.0, posinf=0.0)
                     result_container["results"][0]["responses"][i_rec]["parameters"]['c80'] = c80.tolist()
 
-                    d50 = np.squeeze(pr.parameters.definition(edc, 50)) * 100
+                    d50 = np.squeeze(pr.parameters.definition(edc_params, 50)) * 100
                     d50 = finite_array(d50, nan=0.0, neginf=0.0, posinf=0.0)
                     result_container["results"][0]["responses"][i_rec]["parameters"]['d50'] = d50.tolist()
 
-                    ts = center_time(edc)*1000 # in ms TODO replace by pyrato 1.1.0 version
+                    ts = center_time(edc_params)*1000 # in ms TODO replace by pyrato 1.1.0 version
                     result_container["results"][0]["responses"][i_rec]["parameters"]['ts'] = np.squeeze(ts).tolist()
 
                     spl = np.squeeze(10*np.log10(edc.time[..., 0]/1e-12))
                     spl = finite_array(spl, nan=0.0, neginf=0.0, posinf=0.0)
                     result_container["results"][0]["responses"][i_rec]["parameters"]['spl_t0_freq'] = spl.tolist()
 
-                    edt = np.squeeze(pr.parameters.reverberation_time_linear_regression(edc, 'EDT'))
+                    edt = np.squeeze(pr.parameters.reverberation_time_linear_regression(edc_params_normalized, 'EDT'))
                     edt = finite_array(edt, nan=0.0, neginf=0.0, posinf=0.0)
                     result_container["results"][0]["responses"][i_rec]["parameters"]['edt'] = edt.tolist()
 
@@ -499,6 +515,196 @@ def create_frequency_value_pairs(frequencies: list, val_str: str, num_tuples: in
         raise ValueError(f"Invalid values: {val_str}") from e
 
     return list(zip(frequencies[:num_tuples], vals))
+
+def fetch_medium_properties(
+    medium_str: str,
+) -> tuple[float | None, float | None, float | None, float | None, float | None, bool]:
+    """Parse the atmospheric medium string into its individual property values.
+
+    Specifies atmospheric conditions used for Speed and Attenuation: temp,
+    rel hum, atmo pres, sat vap pres, CO2. Use x for missing values.
+
+    Parameters
+    ----------
+    medium_str : str
+        Comma-separated string of 5 values in the order temperature,
+        relative humidity, atmospheric pressure, saturation vapor pressure,
+        CO2 concentration. Missing values are marked with "x".
+
+    Returns
+    -------
+    temp : float or None
+        Temperature, or None if missing.
+    rel_hum : float or None
+        Relative humidity, or None if missing.
+    atmo_pres : float or None
+        Atmospheric pressure, or None if missing.
+    sat_vap_pres : float or None
+        Saturation vapor pressure, or None if missing.
+    co2 : float or None
+        CO2 concentration, or None if missing.
+    valid : bool
+        True if valid data was provided, i.e. at least the temperature
+        value is present.
+
+    Raises
+    ------
+    ValueError:
+    - If ``medium_str`` does not contain exactly 5 comma-separated values.
+    - If a value is neither "x" nor convertible to float.
+
+    Examples
+    --------
+    >>> fetch_medium_properties("20, x, x, x, x")
+    (20.0, None, None, None, None, True)
+    >>> fetch_medium_properties("x, x, x, x, x")
+    (None, None, None, None, None, False)
+    """
+    values = [val.strip() for val in medium_str.split(",")]
+    if len(values) != 5:
+        raise ValueError(
+            f"Medium string must contain exactly 5 comma-separated values: {medium_str}"
+        )
+
+    parsed = []
+    for val in values:
+        if val.lower() == "x":
+            parsed.append(None)
+        else:
+            try:
+                parsed.append(float(val))
+            except ValueError as e:
+                raise ValueError(f"Invalid value in medium string: {medium_str}") from e
+
+    temp, rel_hum, atmo_pres, sat_vap_pres, co2 = parsed
+    valid = temp is not None
+
+    return temp, rel_hum, atmo_pres, sat_vap_pres, co2, valid
+
+# misuka's standard medium (acoustic_medium_standard_* in misuka's
+# include/mitsuba/core/acoustic.h, not exposed to Python): the values misuka
+# uses for every acoustic_medium field that is not given.
+MISUKA_STANDARD_MEDIUM = dict(temperature=20.0, relative_humidity=0.5,
+                              atmospheric_pressure=101325.0,
+                              saturation_vapor_pressure=2333.0, co2_ppm=428.73)
+SPEED_METHODS = ("simple", "ideal_gas", "cramer")
+# The GUI offers the method as a number 1-4 (a radio group with four options
+# does not fit the settings panel); method names are accepted as well.
+SPEED_METHOD_BY_NUMBER = {"1": "simple", "2": "ideal_gas", "3": "cramer", "4": "own_value"}
+
+
+def build_acoustic_integrator(
+    medium_str: str,
+    max_time: float,
+    speed_method: str,
+    speed_of_sound: float,
+    apply_attenuation: bool | None = None,
+    max_energy_loss: float = 100.0,
+):
+    """Parse the medium string and initialize misuka's ``acoustic_path`` integrator.
+
+    Builds the ``acoustic_medium`` dict from whichever atmospheric
+    properties are present in ``medium_str`` (see
+    :func:`fetch_medium_properties`); misuka fills every missing field
+    with its standard medium (see MISUKA_STANDARD_MEDIUM). The speed of
+    sound is derived from that medium with ``speed_method`` ("simple",
+    "ideal_gas" or "cramer"), or, if ``speed_method`` is ``"own_value"``,
+    set explicitly to ``speed_of_sound``, which always takes precedence
+    over ``acoustic_medium`` in misuka.
+
+    Parameters
+    ----------
+    medium_str : str
+        Atmospheric medium string, see :func:`fetch_medium_properties`.
+    max_time : float
+        Maximum propagation time in seconds, forwarded to the integrator.
+    speed_method : str
+        ``"simple"``, ``"ideal_gas"`` or ``"cramer"`` to derive the speed
+        of sound from ``acoustic_medium`` with that formula, or
+        ``"own_value"`` to use ``speed_of_sound`` explicitly.
+    speed_of_sound : float
+        User-specified speed of sound in m/s, used when
+        ``speed_method == "own_value"``.
+    apply_attenuation : bool, optional
+        Whether to apply frequency-dependent air attenuation (ISO 9613-1).
+        Forwarded to ``acoustic_medium`` only if not None; misuka requires
+        temperature, relative humidity and atmospheric pressure to compute
+        attenuation; missing ones take misuka's standard-medium values.
+        If None (default), misuka's own default applies.
+    max_energy_loss : float, optional
+        Energy loss in dB after which a path is terminated (default 100).
+
+    Returns
+    -------
+    mitsuba.Integrator
+        The loaded ``acoustic_path`` integrator.
+    float
+        The speed of sound (m/s) actually used by the integrator to
+        render the ETC: ``speed_of_sound`` verbatim if
+        ``speed_method == "own_value"``, otherwise the value derived from
+        ``acoustic_medium`` via :py:func:`mitsuba.acoustic.speed_of_sound`
+        (mirroring what misuka computes internally for the integrator).
+        Any code that synthesizes a broadband RIR from the ETC (e.g. via
+        a reflection density that depends on the propagation speed) must
+        use this value to stay consistent with the ETC's time axis.
+    """
+    temp, rel_hum, atmo_pres, sat_vap_pres, co2, valid = fetch_medium_properties(medium_str)
+    logger.info(f'Input value for medium: {medium_str}')
+    logger.info(f'Input value for speed method: {speed_method}')
+    logger.info(f'Input value for apply attenuation: {apply_attenuation}')
+
+    integrator_dict = {
+        "type": "acoustic_path",
+        "max_depth": -1,  # maximum path depth (-1 = no limit, 1 = direct sound only, 2 = up to 1 reflection, etc.)
+        "max_time": max_time,  # maximum propagation time in seconds
+        "max_energy_loss": max_energy_loss,  # dB; misuka's own default (60) cuts the late tail
+    }
+
+    acoustic_medium = {}
+    if valid:
+        acoustic_medium["temperature"] = temp
+        if rel_hum is not None:
+            acoustic_medium["relative_humidity"] = rel_hum
+        if atmo_pres is not None:
+            acoustic_medium["atmospheric_pressure"] = atmo_pres
+        if sat_vap_pres is not None:
+            acoustic_medium["saturation_vapor_pressure"] = sat_vap_pres
+        if co2 is not None:
+            acoustic_medium["co2_ppm"] = co2
+    else:
+        logger.info('No valid medium properties provided (temperature missing); speed/attenuation medium fields are not set.')
+
+    if apply_attenuation is not None:
+        acoustic_medium["apply_attenuation"] = apply_attenuation
+
+    if acoustic_medium:
+        integrator_dict["acoustic_medium"] = acoustic_medium
+        logger.info(f'Using acoustic_medium (missing fields fall back to misuka defaults): {acoustic_medium}')
+
+    if speed_method == "own_value":
+        integrator_dict["speed_of_sound"] = speed_of_sound # overwrites any calculated value by misuka
+        resolved_speed_of_sound = speed_of_sound
+        logger.info(f'Using speed of sound specified by user: {speed_of_sound} m/s')
+    else:
+        if speed_method not in SPEED_METHODS:
+            raise ValueError(f"Invalid speed method '{speed_method}'. "
+                             f"Valid options are {SPEED_METHODS} or 'own_value'.")
+        acoustic_medium["speed_of_sound_method"] = speed_method
+        integrator_dict["acoustic_medium"] = acoustic_medium
+        # Mirrors what misuka computes internally from the same acoustic_medium
+        # dict (missing fields -> standard medium), so the ETC and any later
+        # processing (e.g. reflection-density synthesis) agree on the speed.
+        given = dict(temperature=temp, relative_humidity=rel_hum, atmospheric_pressure=atmo_pres,
+                     saturation_vapor_pressure=sat_vap_pres, co2_ppm=co2)
+        medium = {k: (MISUKA_STANDARD_MEDIUM[k] if v is None else v) for k, v in given.items()}
+        # plain float under every variant (JIT variants return a width-1 array)
+        resolved_speed_of_sound = float(np.ravel(mi.acoustic.speed_of_sound(**medium, method=speed_method))[0])
+        logger.info(f'Speed of sound derived from acoustic_medium ({speed_method}): {resolved_speed_of_sound} m/s')
+
+    integrator_acoustic = mi.load_dict(integrator_dict)
+    logger.info(f'Integrator Setup: {integrator_acoustic}')
+
+    return integrator_acoustic, resolved_speed_of_sound
 
 def export_physical_surface_to_ply(surface_name: str, entity_tags, ply_path: str | Path) -> Path:
     """Export only the triangular mesh faces of one physical surface to PLY.
