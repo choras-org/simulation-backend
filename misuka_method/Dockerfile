@@ -54,7 +54,7 @@ RUN python3.11 -m pip install --upgrade pip typing_extensions
 RUN mkdir -p /opt/misuka && cd /opt/misuka && \
     git init && \
     git remote add origin https://github.com/misuka-renderer/misuka.git && \
-    git fetch --depth 1 origin refs/tags/choras-v1.0.0 && \
+    git fetch --depth 1 origin refs/tags/choras-v1.0.1 && \
     git checkout FETCH_HEAD && \
     git submodule update --init --recursive --depth 1
 
