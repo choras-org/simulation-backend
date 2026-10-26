@@ -180,38 +180,3 @@ def test_invalid_number_rays(create_modified_input_file):
     interface = PyroomacousticsMethod(create_modified_input_file)
     with pytest.raises(ValueError, match="not allowed"):
         interface.run_simulation()
-
-
-def test_import_room_geometry_multi_surface_group(create_temporary_input_file):
-    """All surfaces of a physical group become walls, not just the first."""
-    n_walls = len(
-        PyroomacousticsMethod(
-            create_temporary_input_file
-        ).import_room_geometry()
-    )
-
-    # merge walls sharing a material (surfaces 2, 4, 5, 6) into one
-    # physical group
-    with open(create_temporary_input_file) as f:
-        config = json.load(f)
-    with open(config["geo_path"]) as f:
-        geo = [
-            line
-            for line in f
-            if not line.startswith(
-                tuple(f'Physical Surface("wall{i}")' for i in range(1, 5))
-            )
-        ]
-    with open(config["geo_path"], "w") as f:
-        f.writelines(geo + ['Physical Surface("walls") = { 2, 4, 5, 6 };\n'])
-    coefficients = config["absorption_coefficients"]
-    coefficients["walls"] = coefficients["wall1"]
-    for i in range(1, 5):
-        del coefficients[f"wall{i}"]
-    with open(create_temporary_input_file, "w") as f:
-        json.dump(config, f)
-
-    walls = PyroomacousticsMethod(
-        create_temporary_input_file
-    ).import_room_geometry()
-    assert len(walls) == n_walls

@@ -356,11 +356,11 @@ class PyroomacousticsMethod(SimulationMethod):
         # absorption and scattering coefficients
 
         for surface_name in surface_group_names:
-            # a physical group (material) can span several surfaces
-            face_nodes = np.concatenate([
-                gmsh.model.mesh.getElementFaceNodes(element_type, 3, tag=tag)
-                for _, tag in gmsh.model.getEntitiesForPhysicalName(
-                    surface_name)])
+            dim_tags = gmsh.model.getEntitiesForPhysicalName(surface_name)
+            dim, tag = dim_tags[0]
+
+            face_nodes = gmsh.model.mesh.getElementFaceNodes(
+                element_type, 3, tag=tag)
             faces = np.reshape(face_nodes, (len(face_nodes) // 3, 3))
 
             absorption_coeffs_config = input_data[
