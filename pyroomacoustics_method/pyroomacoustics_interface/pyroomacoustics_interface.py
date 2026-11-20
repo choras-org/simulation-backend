@@ -361,7 +361,7 @@ class PyroomacousticsMethod(SimulationMethod):
         element_type = gmsh.model.mesh.getElementType("triangle", 1)
 
         # create pyroomacoustics.walls for all surface elements (triangles)
-        triangles, wall_materials = [], []
+        walls = []
 
         # loop through all named surfaces and create walls with corresponding
         # absorption and scattering coefficients
@@ -415,23 +415,16 @@ class PyroomacousticsMethod(SimulationMethod):
                 }
             )
 
-            for face in faces:
-                triangles.append(coords[face - 1, :].reshape(-1, 3))
-                wall_materials.append(material)
-
-        # pyroomacoustics needs every wall normal to point out of the room
-        # (image-source visibility, room volume); the imported surfaces do not
-        # guarantee a consistent orientation.
-        triangles = orient_triangles_outward(triangles)
-
-        return [
-            pra.wall_factory(
-                triangle.T,
-                absorption=material.energy_absorption['coeffs'],
-                scattering=material.scattering['coeffs'],
+            walls.extend(
+                pra.wall_factory(
+                    coords[face - 1, :].reshape(-1, 3).T,
+                    absorption=material.energy_absorption['coeffs'],
+                    scattering=material.scattering['coeffs'],
+                )
+                for face in faces
             )
-            for triangle, material in zip(triangles, wall_materials)
-        ]
+
+        return walls
 
 
     def get_source_positions(self) -> np.ndarray:
@@ -807,67 +800,6 @@ def calculate_room_acoustic_parameters(
     }
 
     return parameters
-
-
-def orient_triangles_outward(triangles):
-    """Orient the triangles of a closed surface mesh consistently, with
-    normals pointing outward.
-
-    Neighbouring triangles of a consistently oriented closed mesh traverse
-    their shared edge in opposite directions. Starting from one triangle per
-    connected component, the orientation is propagated across shared edges;
-    the component is then flipped as a whole if its signed volume is
-    negative, i.e. if its normals point inward. Meshes with edges not shared
-    by exactly two triangles are returned unchanged, with a warning.
-
-    Parameters
-    ----------
-    triangles : array_like, shape (n, 3, 3)
-        Triangle corner coordinates.
-
-    Returns
-    -------
-    np.ndarray, shape (n, 3, 3)
-        The triangles, with the corner order reversed where needed.
-    """
-    tris = np.array(triangles, dtype=float)
-    _, vertex_ids = np.unique(np.round(tris.reshape(-1, 3), 6), axis=0, return_inverse=True)
-    vertex_ids = vertex_ids.reshape(-1, 3)
-
-    edge_faces = {}
-    for f, (a, b, c) in enumerate(vertex_ids):
-        for u, v in ((a, b), (b, c), (c, a)):
-            edge_faces.setdefault((min(u, v), max(u, v)), []).append((f, u, v))
-    if any(len(faces) != 2 for faces in edge_faces.values()):
-        warnings.warn("Surface mesh is not closed and manifold; wall orientation left unchanged.",
-                      stacklevel=2)
-        return tris
-
-    sign = np.zeros(len(tris), dtype=int)
-    for seed in range(len(tris)):
-        if sign[seed]:
-            continue
-        sign[seed] = 1
-        component, stack = [seed], [seed]
-        while stack:
-            f = stack.pop()
-            a, b, c = vertex_ids[f]
-            for u, v in ((a, b), (b, c), (c, a)):
-                for g, gu, gv in edge_faces[(min(u, v), max(u, v))]:
-                    if g == f or sign[g]:
-                        continue
-                    # same traversal direction as f -> g must be flipped
-                    same = (gu, gv) == (u, v)
-                    sign[g] = -sign[f] if same else sign[f]
-                    component.append(g)
-                    stack.append(g)
-        comp = np.array(component)
-        oriented = np.where(sign[comp, None, None] > 0, tris[comp], tris[comp][:, ::-1])
-        volume = np.einsum("ij,ij->i", oriented[:, 0],
-                           np.cross(oriented[:, 1], oriented[:, 2])).sum() / 6.0
-        if volume < 0:
-            sign[comp] *= -1
-    return np.where(sign[:, None, None] > 0, tris, tris[:, ::-1])
 
 
 # copy pasted from pyrato
