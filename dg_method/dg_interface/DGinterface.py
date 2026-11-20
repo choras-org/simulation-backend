@@ -101,23 +101,16 @@ def dg_method(json_file_path: str | Path, save_results_to_json: bool = True):
 
         # FUNCTION CALLED HERE
         (
-            materialNames,
+            BC_labels,
             absorption_coefficient,
             surface_absorption,
             triangle_face_absorption,
         ) = surface_materials(result_container, c0)
-        BC_labels = {}
-        RIvals = {}
-        i = 0
-        for ac in absorption_coefficient:
-            BC_labels[materialNames[i]] = ac
-
-            # r = sqrt(1-a)
-            RIvals[materialNames[i]] = sqrt(
-                1 - sum(absorption_coefficient[ac]) / len(absorption_coefficient[ac])
-            )
-
-            i += 1
+        # r = sqrt(1-a)
+        RIvals = {
+            name: sqrt(1 - sum(ac) / len(ac))
+            for name, ac in absorption_coefficient.items()
+        }
 
         real_valued_impedance_boundary = [
             # {"label": 11, "RI": 0.9}
@@ -283,16 +276,17 @@ def surface_materials(result_container, c0):
     triangle_face_absorption = (
         []
     )  # initialization absorption term for each triangle face at the boundary and per each wall
+    # keyed by physical group name; edg_acoustics matches BC_labels values
+    # against the triangles' physical tags
+    BC_labels = {}
     absorption_coefficient = {}
 
-    materialNames = []
     for group in vGroupsNames:
         if group[0] != 2:
             continue
         name_group = group[2]
         name_split = name_group.split("$")
         name_abs_coeff = name_split[0]
-        materialNames.append(name_abs_coeff)
 
         abscoeff = result_container["absorption_coefficients"][name_abs_coeff]
 
@@ -305,6 +299,8 @@ def surface_materials(result_container, c0):
             abscoeff_list = [float(i) for i in abscoeff]  # for multiple frequencies
 
         physical_tag = group[1]  # Get the physical group tag
+        BC_labels[name_group] = physical_tag
+        absorption_coefficient[name_group] = abscoeff_list
         entities = gmsh.model.getEntitiesForPhysicalGroup(
             2, physical_tag
         )  # Retrieve all the entities in this physical group (the entities are the number of walls in the physical group)
@@ -313,7 +309,6 @@ def surface_materials(result_container, c0):
             3, c0, abscoeff_list
         )  # calculates the absorption term based on the type of boundary condition th
         for entity in entities:
-            absorption_coefficient[entity] = abscoeff_list
             surface_absorption.append(
                 (entity, Abs_term)
             )  # absorption term (alpha*surfaceofwall) for each wall of the room
@@ -328,7 +323,7 @@ def surface_materials(result_container, c0):
         )  # Append the Abs_term value for each triangle face
 
     return (
-        materialNames,
+        BC_labels,
         absorption_coefficient,
         surface_absorption,
         triangle_face_absorption,
