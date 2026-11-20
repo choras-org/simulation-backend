@@ -5,6 +5,11 @@ History
 Unreleased
 ----------
 
+Added
+~~~~~
+
+- Test configurations based on simulation-run data exported by the CHORAS backend.
+
 Bug Fixes
 ~~~~~~~~~
 

@@ -106,18 +106,35 @@ def test_export_pressure_csv(create_temporary_input_file):
     )
 
 
-@pytest.mark.parametrize('create_modified_input_file', [
-    {'sampling_rate': 8000, 'image_source_order': 1},
-    {'sampling_rate': 16000, 'image_source_order': 1},
-    {'sampling_rate': 48000, 'image_source_order': 1},
-    {'ray_tracer_number_of_rays': 1000, 'image_source_order': 1},
-    {'ray_tracer_number_of_rays': 5000, 'image_source_order': 1},
-    {'ray_tracer_number_of_rays': 5000, 'image_source_order': -1},
-    {
-        'ray_tracer_number_of_rays': 1000,
-        'image_source_order': 1,
-        "ray_tracer_detector_radius": 0.1},
-], indirect=True)
+# Input JSON files of simulation runs, each referencing its geometry via
+# geo_path
+simulation_runs = [
+    "test_input_pyroomacoustics.json",
+    "MeasurementRoom_092dd9ff70824eb7801bc5ed5aac07d2_13.json",
+]
+
+
+@pytest.mark.parametrize(
+    "create_modified_input_file",
+    [
+        {"input_file": simulation_run, **settings}
+        for simulation_run in simulation_runs
+        for settings in [
+            {"sampling_rate": 8000, "image_source_order": 1},
+            {"sampling_rate": 16000, "image_source_order": 1},
+            {"sampling_rate": 48000, "image_source_order": 1},
+            {"ray_tracer_number_of_rays": 1000, "image_source_order": 1},
+            {"ray_tracer_number_of_rays": 5000, "image_source_order": 1},
+            {"ray_tracer_number_of_rays": 5000, "image_source_order": -1},
+            {
+                "ray_tracer_number_of_rays": 1000,
+                "image_source_order": 1,
+                "ray_tracer_detector_radius": 0.1,
+            },
+        ]
+    ],
+    indirect=True,
+)
 def test_run_simulation(create_modified_input_file):
     """Run the full simulation pipeline."""
 
@@ -128,14 +145,18 @@ def test_run_simulation(create_modified_input_file):
     with open(input_file_path, 'r') as f:
         input_config = json.load(f)
 
-    rir = np.array(
-        input_config["results"][0]["responses"][0]["receiverResults"]
-    )
+    result = input_config["results"][0]
+    response = result["responses"][0]
+    rir = np.array(response["receiverResults"])
 
     assert rir is not None
     assert len(rir) > 0
     assert isinstance(rir, np.ndarray)
     assert np.any(np.abs(rir) >= 1e-6)
+
+    for name, values in response["parameters"].items():
+        assert len(values) == len(result["frequencies"]), name
+        assert np.all(np.isfinite(values)), name
 
 
 @pytest.mark.parametrize('create_modified_input_file', [
