@@ -320,6 +320,17 @@ class PyroomacousticsMethod(SimulationMethod):
         geometry_file = input_data['geo_path']
         gmsh.open(geometry_file)
 
+        # Coarsest possible surface mesh: every wall becomes a pyroomacoustics
+        # Wall, and the image source model scales roughly with
+        # n_walls**max_order. The .geo carries a 1 m point mesh size (meant
+        # for the wave-based methods), which would turn e.g. a 148-surface
+        # concert hall into ~15,000 walls and make an order-3 ISM intractable.
+        # A plane surface needs no subdivision for geometrical acoustics.
+        gmsh.option.setNumber("Mesh.MeshSizeFromPoints", 0)
+        gmsh.option.setNumber("Mesh.MeshSizeFromCurvature", 0)
+        gmsh.option.setNumber("Mesh.MeshSizeExtendFromBoundary", 1)
+        gmsh.option.setNumber("Mesh.MeshSizeMax", 1e9)
+
         # generate 2d surface mesh
         dim = 2 # 2D surfaces
         gmsh.model.mesh.generate(dim)
