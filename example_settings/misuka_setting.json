@@ -90,7 +90,7 @@
                 "Don't Apply": "false"
             },
             "default": "false",
-            "description": "If set to 'Apply', attenuation will be calculated with bin correct distances from temp, rel hum, atmo pres. Fails run if input is not provided."
+            "description": "If set to 'Apply', attenuation will be calculated with bin correct distances from temp, rel hum, atmo pres. Missing medium values are taken from misuka's standard medium."
 
         },
         {
