@@ -320,6 +320,17 @@ class PyroomacousticsMethod(SimulationMethod):
         geometry_file = input_data['geo_path']
         gmsh.open(geometry_file)
 
+        # Coarsest possible surface mesh: every wall becomes a pyroomacoustics
+        # Wall, and the image source model scales roughly with
+        # n_walls**max_order. The .geo carries a 1 m point mesh size (meant
+        # for the wave-based methods), which would turn e.g. a 148-surface
+        # concert hall into ~15,000 walls and make an order-3 ISM intractable.
+        # A plane surface needs no subdivision for geometrical acoustics.
+        gmsh.option.setNumber("Mesh.MeshSizeFromPoints", 0)
+        gmsh.option.setNumber("Mesh.MeshSizeFromCurvature", 0)
+        gmsh.option.setNumber("Mesh.MeshSizeExtendFromBoundary", 1)
+        gmsh.option.setNumber("Mesh.MeshSizeMax", 1e9)
+
         # generate 2d surface mesh
         dim = 2 # 2D surfaces
         gmsh.model.mesh.generate(dim)
@@ -356,11 +367,11 @@ class PyroomacousticsMethod(SimulationMethod):
         # absorption and scattering coefficients
 
         for surface_name in surface_group_names:
-            dim_tags = gmsh.model.getEntitiesForPhysicalName(surface_name)
-            dim, tag = dim_tags[0]
-
-            face_nodes = gmsh.model.mesh.getElementFaceNodes(
-                element_type, 3, tag=tag)
+            # a physical group (material) can span several surfaces
+            face_nodes = np.concatenate([
+                gmsh.model.mesh.getElementFaceNodes(element_type, 3, tag=tag)
+                for _, tag in gmsh.model.getEntitiesForPhysicalName(
+                    surface_name)])
             faces = np.reshape(face_nodes, (len(face_nodes) // 3, 3))
 
             absorption_coeffs_config = input_data[

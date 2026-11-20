@@ -1,11 +1,11 @@
+import json
 import os
 import shutil
 import tempfile
 from pathlib import Path
-import json
-from unittest.mock import patch, MagicMock
-import pyfar as pf
+from unittest.mock import MagicMock, patch
 
+import pyfar as pf
 import pytest
 
 
@@ -95,11 +95,18 @@ def create_modified_settings_input_file_factory(key, value):
     return _create_modified_settings_input_file
 
 
-def create_modified_settings_input_file_multi_factory(**settings):
+def create_modified_settings_input_file_multi_factory(
+    input_file="test_input_pyroomacoustics.json", **settings
+):
     """Factory to create a modified input file with multiple settings changed.
+
+    Stored results are dropped so tests only see freshly written ones.
 
     Parameters
     ----------
+    input_file : str
+        Name of the input JSON file in the test data folder. The geometry
+        file is resolved via its ``geo_path``.
     **settings : dict
         Key-value pairs to update in simulationSettings.
 
@@ -119,7 +126,8 @@ def create_modified_settings_input_file_multi_factory(**settings):
     """
 
     def _create_modified_settings_input_file():
-        input_tmp = load_default_input_data()
+        with open(os.path.join(default_data_path(), input_file)) as f:
+            input_tmp = json.load(f)
 
         # Ensure simulationSettings exists
         if 'simulationSettings' not in input_tmp:
@@ -128,14 +136,17 @@ def create_modified_settings_input_file_multi_factory(**settings):
         # Update all provided settings
         input_tmp['simulationSettings'].update(settings)
 
-        geo_file = os.path.join(
-            default_data_path(), "test_room_pyroomacoustics.geo")
+        response = input_tmp["results"][0]["responses"][0]
+        response["receiverResults"] = []
+        response["parameters"] = {key: [] for key in response["parameters"]}
+
+        geo_name = os.path.basename(input_tmp["geo_path"])
+        geo_file = os.path.join(default_data_path(), geo_name)
 
         with tempfile.TemporaryDirectory() as tmpdirname:
             tmp_path = Path(tmpdirname) / "temp_input.json"
             shutil.copy(geo_file, Path(tmpdirname))
-            input_tmp['geo_path'] = os.path.join(
-                tmpdirname, "test_room_pyroomacoustics.geo")
+            input_tmp["geo_path"] = os.path.join(tmpdirname, geo_name)
             with open(tmp_path, 'w') as f:
                 json.dump(input_tmp, f)
 

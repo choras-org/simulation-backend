@@ -1,0 +1,24 @@
+"""Method-specific geometry validation for the DG method (lightweight).
+
+This module provides geometry validation checks specific to the Discontinuous
+Galerkin solver. It is imported dynamically by the backend (no heavy deps on
+edg-acoustics).
+"""
+
+
+def run_method_validation(input_file: str) -> dict:
+    """Validate geometry for DG method.
+
+    Args:
+        input_file: Path to the geometry file (e.g., .obj) to validate.
+
+    Returns:
+        dict with keys:
+            - compatible (bool): True if geometry is suitable, False otherwise
+            - reason (str): Human-readable explanation
+    """
+    # TODO: real checks (also consider limitation of current DG implementation)
+    return {
+        "compatible": True,
+        "reason": "Geometry is valid for DG method (default validation).",
+    }

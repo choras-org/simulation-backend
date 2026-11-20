@@ -1,6 +1,6 @@
 [project]
 name = "sparrowpy_interface"
-version = "0.0.1"
+version = "0.1.0"
 description = "Sound Propagation with Acoustic Radiosity for Realistic Outdoor Worlds"
 requires-python = ">=3.11,<3.15"
 authors = [
@@ -67,7 +67,7 @@ dev = ["sparrowpy_interface[deploy,tests,docs]"]
 # Source of truth for sparrowpy_interface's release version, scoped-tagged so
 # it doesn't collide with the other methods sharing this repo.
 [tool.bumpversion]
-current_version = "0.0.1"
+current_version = "0.1.0"
 commit = true
 tag = true
 tag_name = "sparrowpy-v{new_version}"
