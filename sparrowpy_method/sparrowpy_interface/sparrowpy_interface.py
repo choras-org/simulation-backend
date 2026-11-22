@@ -50,7 +50,6 @@ class sparrowpyMethod(SimulationMethod):
 
         # extract simulation settings
         frequencies = result_container['results'][0]['frequencies']
-        n_bands = len(frequencies)
         simulation_settings = result_container["simulationSettings"]
         etc_time_resolution_s = simulation_settings['etc_time_resolution_s']
         speed_of_sound = simulation_settings['speed_of_sound']
@@ -67,7 +66,7 @@ class sparrowpyMethod(SimulationMethod):
             result_container["results"][0]["sourceZ"],
         )
         n_receivers = len(result_container["results"][0]["responses"])
-        receiver_coords = pf.Coordinates(np.zeros((n_receivers)), 0, 0)
+        receiver_coords = pf.Coordinates(np.zeros(n_receivers), 0, 0)
         cart = receiver_coords.cartesian
         for i_rec in range(n_receivers):
             rec = result_container["results"][0]["responses"][i_rec]
