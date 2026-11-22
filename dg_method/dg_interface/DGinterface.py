@@ -5,11 +5,12 @@ import gmsh
 
 from acousticDE.FiniteVolumeMethod.CreateMeshFVM import generate_mesh
 
+from .absorption import dg_reflection_coefficient
 from .definition import SimulationMethod
 
 import json
 import numpy as np
-from math import log, sqrt, factorial, pow
+from math import log, factorial, pow
 
 import edg_acoustics
 import pandas as pd
@@ -106,11 +107,19 @@ def dg_method(json_file_path: str | Path, save_results_to_json: bool = True):
             surface_absorption,
             triangle_face_absorption,
         ) = surface_materials(result_container, c0)
-        # r = sqrt(1-a)
-        RIvals = {
-            name: sqrt(1 - sum(ac) / len(ac))
-            for name, ac in absorption_coefficient.items()
-        }
+        # CHORAS absorption coefficients are random-incidence values. Average them
+        # over the bands up to the one containing freq_upper_limit and convert to
+        # the normal-incidence reflection coefficient used by edg-acoustics.
+        band_frequencies = result_container["results"][0]["frequencies"]
+        RIvals = {}
+        for name, alphas in absorption_coefficient.items():
+            RIvals[name], alpha_mean, bands_used = dg_reflection_coefficient(
+                alphas, band_frequencies, freq_upper_limit
+            )
+            print(
+                f"DG material {name}: random-incidence alpha {alpha_mean:.3f} "
+                f"(bands {bands_used} Hz) -> R = {RIvals[name]:.4f}"
+            )
 
         real_valued_impedance_boundary = [
             # {"label": 11, "RI": 0.9}
