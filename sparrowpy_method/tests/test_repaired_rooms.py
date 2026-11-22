@@ -4,6 +4,7 @@ import os
 import shutil
 from pathlib import Path
 import pyfar as pf
+import numpy as np
 
 import pytest
 
@@ -51,5 +52,3 @@ def test_pipeline_runs_to_results(repaired_room_input_file):
     f = data['results'][0]['frequencies']
     t20 = data['results'][0]['responses'][0]['parameters']['t20']
     assert np.all(t20>0)
-    assert results is not None
-    assert len(results) > 0
