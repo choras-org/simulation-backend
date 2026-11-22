@@ -51,7 +51,9 @@ def test_import_room_geometry(create_temporary_input_file):
     radiosity.check()
 
     # check material stuff 
-    npt.assert_equal(np.squeeze(material_to_walls), np.arange(6))
+    # one wall per patch, each in exactly one material
+    npt.assert_equal(len(walls_points), n_patches)
+    npt.assert_equal(np.sort(np.concatenate(material_to_walls)), np.arange(n_patches))
     npt.assert_equal(np.array(alphas).shape, (6, 6))
     npt.assert_equal(np.array(scattering).shape, (6, 6))
     npt.assert_array_less(np.array(alphas), 1)
@@ -66,7 +68,25 @@ def test_import_room_geometry_normals(create_temporary_input_file):
         ) = _import_room_geometry(
             create_temporary_input_file, patch_length=5)
     
-    npt.assert_almost_equal(walls_normal[0], [0, 0, 1])  # floor
-    npt.assert_almost_equal(walls_normal[2], [0, 0, -1])  # ceiling
-    npt.assert_almost_equal(walls_normal[3], [0, 1, 0])  # wall2
-    npt.assert_almost_equal(walls_normal[4], [1, 0, 0])  # wall3
+    # first wall (triangle) of each surface
+    npt.assert_almost_equal(walls_normal[material_to_walls[0][0]], [0, 0, 1])  # floor
+    npt.assert_almost_equal(walls_normal[material_to_walls[2][0]], [0, 0, -1])  # ceiling
+    npt.assert_almost_equal(walls_normal[material_to_walls[3][0]], [0, 1, 0])  # wall2
+    npt.assert_almost_equal(walls_normal[material_to_walls[4][0]], [1, 0, 0])  # wall3
+
+
+def test_import_room_geometry_tilted_area(create_temporary_input_file_tilted):
+    (
+        walls_points, walls_normal, walls_up_vector,
+        patches_points, n_patches, patch_to_wall_ids,
+        material_to_walls, alphas, scattering, room_volume,
+        ) = _import_room_geometry(
+            create_temporary_input_file_tilted, patch_length=1)
+
+    # walls must cover the whole room surface, including the tilted
+    # ceiling and the non-rectangular floor
+    area = 0.5 * np.linalg.norm(np.cross(
+        walls_points[:, 1] - walls_points[:, 0],
+        walls_points[:, 2] - walls_points[:, 0]), axis=1)
+    npt.assert_almost_equal(np.sum(area), 118.7386, decimal=3)
+    npt.assert_almost_equal(room_volume, 75.75, decimal=3)
