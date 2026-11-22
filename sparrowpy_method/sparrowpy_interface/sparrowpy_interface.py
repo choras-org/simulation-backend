@@ -455,13 +455,12 @@ def _import_room_geometry(json_file_path, patch_length):
     room_center = np.mean(coords, axis=0)
 
     alphas = []
-    walls_points = []
     walls_normal = []
     walls_up_vector = []
     patches_points = []
     all_faces = []
     n_patches = 0
-    patch_to_wall_ids = []
+    surface_to_walls = []
     for i, surface_name in enumerate(surface_group_names):
         dim_tags = gmsh.model.getEntitiesForPhysicalName(surface_name)
         dim, tag = dim_tags[0]
@@ -472,16 +471,11 @@ def _import_room_geometry(json_file_path, patch_length):
 
         # extract wall information
         mesh = trimesh.Trimesh(coords, faces-1)
-        wall_points = np.unique(mesh.bounding_box.vertices, axis=0, )
-        wall_idx = []
-        for p in wall_points:
-            wall_idx.append(np.argmin(np.sum(np.abs((mesh.vertices-p)), axis=1)))
-        wall_points = np.unique(mesh.vertices[wall_idx], axis=0, ) 
 
         # flip normals to the center
         wall_normal = np.median(mesh.face_normals, axis=0)
         normal_dimension_mask = np.abs(wall_normal)>1e-3
-        surface_center = np.mean(wall_points, axis=0)
+        surface_center = mesh.centroid
         pointing_inwards = np.sign((room_center-surface_center)[normal_dimension_mask]) == np.sign(wall_normal[normal_dimension_mask])
         if not np.all(pointing_inwards):
             wall_normal *= -1
@@ -494,14 +488,15 @@ def _import_room_geometry(json_file_path, patch_length):
         else:
             wall_up_vector = [0, 0, 1] 
         
-        walls_points.append(wall_points)
-        walls_normal.append(wall_normal)
-        walls_up_vector.append(wall_up_vector)
+        # Each triangle is passed as its own wall: sparrowpy needs the same
+        # number of points for every wall, and room surfaces are arbitrary
+        # planar polygons.
+        n_patches_wall = faces.shape[0]
+        walls_normal.extend([wall_normal] * n_patches_wall)
+        walls_up_vector.extend([wall_up_vector] * n_patches_wall)
+        surface_to_walls.append(list(range(n_patches, n_patches + n_patches_wall)))
 
         # write patches
-        n_patches_wall = faces.shape[0]
-        for jj in range(n_patches_wall):
-            patch_to_wall_ids.append(i)
         n_patches += n_patches_wall
         patches_points.append(coords[faces-1, :])
         all_faces.append(faces)
@@ -517,11 +512,15 @@ def _import_room_geometry(json_file_path, patch_length):
     room_mesh = trimesh.Trimesh(coords, all_faces - 1)
     room_volume = abs(room_mesh.volume)
 
-    # save wall information
-    walls_points = np.array(walls_points)
+    # save wall information, one wall per patch
+    patches_points = np.concatenate(patches_points)
+    walls_points = patches_points
     walls_normal = np.array(walls_normal)
     walls_up_vector = np.array(walls_up_vector)
-    patches_points = np.concatenate(patches_points)
+    patch_to_wall_ids = list(range(n_patches))
+    material_to_walls = [
+        [wall for surface in surfaces for wall in surface_to_walls[surface]]
+        for surfaces in material_to_walls]
 
     return (
         walls_points, walls_normal, walls_up_vector,
