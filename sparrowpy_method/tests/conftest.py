@@ -56,6 +56,26 @@ def create_temporary_input_file():
 
 
 @pytest.fixture
+def create_temporary_input_file_tilted():
+    """Like create_temporary_input_file, for the L-shaped room with a tilted
+    ceiling (see make_test_room_tilted.py)."""
+    with open(os.path.join(
+            default_data_path(), "test_input_tilted.json"), 'r') as f:
+        input_tmp = json.load(f)
+
+    with tempfile.TemporaryDirectory() as tmpdirname:
+        tmp_path = Path(tmpdirname) / "temp_input.json"
+        shutil.copy(os.path.join(
+            default_data_path(), "test_room_tilted.geo"), Path(tmpdirname))
+        input_tmp['geo_path'] = os.path.join(
+            tmpdirname, "test_room_tilted.geo")
+        with open(tmp_path, 'w') as f:
+            json.dump(input_tmp, f)
+
+        yield str(tmp_path)
+
+
+@pytest.fixture
 def mock_requests_post():
     """Fixture to mock requests.post for CLI tests.
 
