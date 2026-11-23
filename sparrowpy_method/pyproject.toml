@@ -30,7 +30,11 @@ dependencies = [
     "requests",
     "gmsh",
     "trimesh",
-    "embreex",  # fast ray casting backend for trimesh (visibility)
+    # fast ray casting backend for trimesh (visibility); only has wheels for
+    # x86_64 and macOS, so other platforms (e.g. linux/arm64) fall back to
+    # trimesh's own ray casting, which needs rtree
+    "embreex; platform_machine == 'x86_64' or platform_machine == 'AMD64' or sys_platform == 'darwin'",
+    "rtree",
     "pyfar",
     "pyrato",
 ]

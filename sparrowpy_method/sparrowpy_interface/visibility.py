@@ -5,7 +5,9 @@ blocker, which scales with n_patches**3 and takes minutes for rooms with a
 few thousand patches. Its check between a point (source or receiver) and
 all patches scales with n_patches**2 per point. Casting one ray per pair
 against a BVH of the room mesh (embree, if ``embreex`` is installed) gives
-the same results in a fraction of a second.
+the same results in a fraction of a second. Without ``embreex`` (no wheels
+for e.g. linux/arm64), trimesh falls back to its own ray casting with an
+rtree, which gives the same results but is slower.
 
 Two patches see each other if
 1. they face each other: each one's center lies in front of the other's

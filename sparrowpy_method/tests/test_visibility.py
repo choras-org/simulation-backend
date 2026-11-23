@@ -5,34 +5,109 @@ import numpy as np
 import numpy.testing as npt
 import pytest
 import sparrowpy
+import trimesh
 
 from sparrowpy_interface.sparrowpy_interface import _import_room_geometry
 from sparrowpy_interface.visibility import patch_visibility, point_visibility
 
 
-def _visibility_both_ways(json_path, patch_length):
-    (walls_points, walls_normal, _, patches_points, _, patch_to_wall_ids,
+@pytest.fixture(autouse=True, params=["embree", "rtree"])
+def ray_backend(request, monkeypatch):
+    """Run every test with embree and with trimesh's rtree fallback, which
+    is used on platforms without embreex wheels (e.g. linux/arm64)."""
+    if request.param == "embree":
+        if not trimesh.ray.has_embree:
+            pytest.skip("embreex is not installed")
+    else:
+        monkeypatch.setattr(trimesh.ray, "has_embree", False)
+    return request.param
+
+
+# sparrowpy's own check is slow, so compute it once for both ray backends
+_SPARROWPY_REFERENCE = {}
+
+
+def _sparrowpy_reference(key, compute):
+    if key not in _SPARROWPY_REFERENCE:
+        _SPARROWPY_REFERENCE[key] = compute()
+    return _SPARROWPY_REFERENCE[key]
+
+
+def _room_key(json_path, patch_length):
+    with open(json_path) as f:
+        geo_path = json.load(f)['geo_path']
+    with open(geo_path) as f:
+        return f.read(), patch_length
+
+
+def _patches(json_path, patch_length):
+    (_, walls_normal, _, patches_points, _, patch_to_wall_ids,
      *_) = _import_room_geometry(json_path, patch_length)
-    patches_normal = walls_normal[patch_to_wall_ids]
-    patches_points = np.asarray(patches_points, dtype=float)
+    return (np.asarray(patches_points, dtype=float),
+            walls_normal[patch_to_wall_ids])
+
+
+def _passes_through_edge(start, end, patches_points, tol=1e-9):
+    """Whether the segment from ``start`` to ``end`` passes through an edge
+    of any patch (closest distance between segments below ``tol``)."""
+    p0 = patches_points.reshape(-1, 3)
+    v = np.roll(patches_points, -1, axis=1).reshape(-1, 3) - p0
+    u = end - start
+    w = start - p0
+    a, b, c = u @ u, v @ u, np.einsum("ij,ij->i", v, v)
+    d, e = w @ u, np.einsum("ij,ij->i", v, w)
+    denom = a * c - b**2
+    s = np.clip(np.where(
+        denom > 1e-12, (b * e - c * d) / np.where(denom > 1e-12, denom, 1),
+        0), 0, 1)
+    t = np.clip((b * s + e) / c, 0, 1)
+    s = np.clip((b * t - d) / a, 0, 1)
+    distance = np.linalg.norm(
+        start + s[:, np.newaxis] * u - (p0 + t[:, np.newaxis] * v), axis=1)
+    return np.min(distance) < tol
+
+
+def _assert_matches(actual, expected, segment, patches_points, ray_backend):
+    """Assert equal visibility. trimesh's rtree fallback misses rays passing
+    exactly through an edge (e.g. the inner corner edge of the L-shaped
+    room), which embree and sparrowpy count as blocked. Only these
+    mismatches are allowed with the fallback."""
+    mismatch = actual != expected
+    if ray_backend == "rtree":
+        for idx in zip(*np.nonzero(mismatch)):
+            if actual[idx] and _passes_through_edge(
+                    *segment(*idx), patches_points):
+                mismatch[idx] = False
+    assert not np.any(mismatch), \
+        f"visibility differs from sparrowpy at {np.argwhere(mismatch)}"
+
+
+def _compare_patch_visibility(json_path, patch_length, ray_backend):
+    """Compare patch_visibility with sparrowpy and return it."""
+    patches_points, patches_normal = _patches(json_path, patch_length)
+    centers = patches_points.mean(axis=1)
 
     actual = patch_visibility(patches_points, patches_normal)
-    expected = sparrowpy.geometry._check_patch2patch_visibility(
-        patches_points.mean(axis=1), patches_normal, patches_points)
-    return actual, expected
+    expected = _sparrowpy_reference(
+        ("patch", *_room_key(json_path, patch_length)),
+        lambda: sparrowpy.geometry._check_patch2patch_visibility(
+            centers, patches_normal, patches_points))
+    _assert_matches(
+        actual, expected, lambda i, j: (centers[i], centers[j]),
+        patches_points, ray_backend)
+    return actual
 
 
 @pytest.mark.parametrize("patch_length", [3, 1])
 def test_visibility_matches_sparrowpy_box(
-        create_temporary_input_file, patch_length):
-    actual, expected = _visibility_both_ways(
-        create_temporary_input_file, patch_length)
-    npt.assert_array_equal(actual, expected)
+        create_temporary_input_file, patch_length, ray_backend):
+    _compare_patch_visibility(
+        create_temporary_input_file, patch_length, ray_backend)
 
 
 @pytest.mark.parametrize("patch_length", [3, 1])
 def test_visibility_matches_sparrowpy_l_shaped(
-        create_temporary_input_file_tilted, patch_length):
+        create_temporary_input_file_tilted, patch_length, ray_backend):
     """The L-shaped room has patches that are hidden behind a corner.
 
     With ``patch_length=3`` sparrowpy before #168 wrongly reported one pair
@@ -40,12 +115,11 @@ def test_visibility_matches_sparrowpy_l_shaped(
     exactly on its test ray twice. See
     ``test_visibility_segment_level_with_vertex``.
     """
-    actual, expected = _visibility_both_ways(
-        create_temporary_input_file_tilted, patch_length)
+    actual = _compare_patch_visibility(
+        create_temporary_input_file_tilted, patch_length, ray_backend)
     # facing each other but blocked by the corner
     assert np.any(~actual & _facing(create_temporary_input_file_tilted,
                                     patch_length))
-    npt.assert_array_equal(actual, expected)
 
 
 def _facing(json_path, patch_length):
@@ -101,18 +175,22 @@ def test_visibility_segment_level_with_vertex():
     assert patch_visibility(points, normals)[0, 1]
 
 
-def _point_visibility_both_ways(json_path, patch_length, points):
-    (_, walls_normal, _, patches_points, _, patch_to_wall_ids,
-     *_) = _import_room_geometry(json_path, patch_length)
-    patches_normal = walls_normal[patch_to_wall_ids]
-    patches_points = np.asarray(patches_points, dtype=float)
+def _compare_point_visibility(json_path, patch_length, points, ray_backend):
+    """Compare point_visibility with sparrowpy and return it."""
+    patches_points, patches_normal = _patches(json_path, patch_length)
     centers = patches_points.mean(axis=1)
 
     actual = point_visibility(points, patches_points, patches_normal)
-    expected = np.array([
-        sparrowpy.geometry._check_point2patch_visibility(
-            p, centers, patches_normal, patches_points) for p in points])
-    return actual, expected
+    expected = _sparrowpy_reference(
+        ("point", *_room_key(json_path, patch_length), points.tobytes()),
+        lambda: np.array([
+            sparrowpy.geometry._check_point2patch_visibility(
+                p, centers, patches_normal, patches_points)
+            for p in points]))
+    _assert_matches(
+        actual, expected, lambda p, j: (points[p], centers[j]),
+        patches_points, ray_backend)
+    return actual
 
 
 def _source_and_receivers(json_path):
@@ -125,25 +203,23 @@ def _source_and_receivers(json_path):
 
 @pytest.mark.parametrize("patch_length", [3, 1])
 def test_point_visibility_matches_sparrowpy_box(
-        create_temporary_input_file, patch_length):
+        create_temporary_input_file, patch_length, ray_backend):
     points = _source_and_receivers(create_temporary_input_file)
-    actual, expected = _point_visibility_both_ways(
-        create_temporary_input_file, patch_length, points)
-    npt.assert_array_equal(actual, expected)
+    _compare_point_visibility(
+        create_temporary_input_file, patch_length, points, ray_backend)
 
 
 @pytest.mark.parametrize("patch_length", [3, 1])
 def test_point_visibility_matches_sparrowpy_l_shaped(
-        create_temporary_input_file_tilted, patch_length):
+        create_temporary_input_file_tilted, patch_length, ray_backend):
     # source, receiver and two points in each leg of the L-shaped room
     points = np.vstack([
         _source_and_receivers(create_temporary_input_file_tilted),
         [[1.5, 4.0, 1.2], [4.5, 1.0, 1.7], [1.0, 1.0, 1.0]]])
-    actual, expected = _point_visibility_both_ways(
-        create_temporary_input_file_tilted, patch_length, points)
+    actual = _compare_point_visibility(
+        create_temporary_input_file_tilted, patch_length, points, ray_backend)
     # some patches are hidden behind the corner of the L
     assert not np.all(actual)
-    npt.assert_array_equal(actual, expected)
 
 
 def test_point_visibility_blocked_and_behind():
