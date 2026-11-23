@@ -2,7 +2,7 @@
 name = "sparrowpy_interface"
 version = "0.1.0"
 description = "Sound Propagation with Acoustic Radiosity for Realistic Outdoor Worlds"
-requires-python = ">=3.11,<3.15"
+requires-python = ">=3.13,<3.15"
 authors = [
     { name = "Anne Heimes", email = "ahe@akustik.rwth-aachen.de" },
 ]
@@ -20,17 +20,21 @@ classifiers = [
     "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
     "Natural Language :: English",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
 ]
 dependencies = [
     "numpy>=1.23.0",
-    "sparrowpy>=1.1",
+    "sparrowpy>=1.1.2",
+    "numba",
     "requests",
     "gmsh",
     "trimesh",
+    # fast ray casting backend for trimesh (visibility); only has wheels for
+    # x86_64 and macOS, so other platforms (e.g. linux/arm64) fall back to
+    # trimesh's own ray casting, which needs rtree
+    "embreex; platform_machine == 'x86_64' or platform_machine == 'AMD64' or sys_platform == 'darwin'",
+    "rtree",
     "pyfar",
     "pyrato",
 ]

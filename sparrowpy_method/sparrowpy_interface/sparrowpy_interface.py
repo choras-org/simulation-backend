@@ -1,9 +1,12 @@
 """Module implementing a CHORAS interface for sparrowpy.
 """
 import json
+import warnings
 from pathlib import Path
 
 from .definition import SimulationMethod
+from . import _threads  # noqa: F401  limit numba threads to the CPU limit
+from .visibility import patch_visibility, point_visibility
 import sparrowpy
 import gmsh
 import pyfar as pf
@@ -50,7 +53,6 @@ class sparrowpyMethod(SimulationMethod):
 
         # extract simulation settings
         frequencies = result_container['results'][0]['frequencies']
-        n_bands = len(frequencies)
         simulation_settings = result_container["simulationSettings"]
         etc_time_resolution_s = simulation_settings['etc_time_resolution_s']
         speed_of_sound = simulation_settings['speed_of_sound']
@@ -67,7 +69,7 @@ class sparrowpyMethod(SimulationMethod):
             result_container["results"][0]["sourceZ"],
         )
         n_receivers = len(result_container["results"][0]["responses"])
-        receiver_coords = pf.Coordinates(np.zeros((n_receivers)), 0, 0)
+        receiver_coords = pf.Coordinates(np.zeros(n_receivers), 0, 0)
         cart = receiver_coords.cartesian
         for i_rec in range(n_receivers):
             rec = result_container["results"][0]["responses"][i_rec]
@@ -84,7 +86,14 @@ class sparrowpyMethod(SimulationMethod):
             patches_points, n_patches, patch_to_wall_ids,
             material_to_walls, alphas, scattering, room_volume,
             ) = _import_room_geometry(json_file_path, patch_length)
-    
+
+        # ray casting is much faster than sparrowpy's own visibility checks
+        patches_normal = walls_normal[patch_to_wall_ids]
+        visibility_matrix = patch_visibility(patches_points, patches_normal)
+        source_visibility, *receiver_visibility = point_visibility(
+            np.vstack([source_coords.cartesian, receiver_coords.cartesian]),
+            patches_points, patches_normal)
+
         radiosity = sparrowpy.DirectionalRadiosityFast(
             walls_points,
             walls_normal,
@@ -92,6 +101,7 @@ class sparrowpyMethod(SimulationMethod):
             patches_points,
             n_patches,
             patch_to_wall_ids,
+            visibility_matrix=visibility_matrix,
             )
         
         print('set materials...')
@@ -114,7 +124,8 @@ class sparrowpyMethod(SimulationMethod):
 
         print('initialize source...')
         set_progress_and_save(40, result_container, json_file_path)
-        radiosity.init_source_energy(source_coords)
+        radiosity.init_source_energy(
+            source_coords, source_visibility=source_visibility)
 
         print('compute energy exchange...')
         set_progress_and_save(65, result_container, json_file_path)
@@ -127,7 +138,8 @@ class sparrowpyMethod(SimulationMethod):
         print('collect energy at receiver...')
         set_progress_and_save(90, result_container, json_file_path)
         etc_radiosity = radiosity.collect_energy_receiver_mono(
-            receivers=receiver_coords, direct_sound=True)
+            receivers=receiver_coords, direct_sound=True,
+            receiver_visibility=np.array(receiver_visibility))
 
         # apply sound power
         etc_radiosity = etc_radiosity * sound_power_W
@@ -452,11 +464,7 @@ def _import_room_geometry(json_file_path, patch_length):
     # get the element type for surface mesh
     element_type = gmsh.model.mesh.getElementType("Triangle", 1, True)
     
-    room_center = np.mean(coords, axis=0)
-
     alphas = []
-    walls_normal = []
-    walls_up_vector = []
     patches_points = []
     all_faces = []
     n_patches = 0
@@ -469,31 +477,10 @@ def _import_room_geometry(json_file_path, patch_length):
             element_type, 3, tag=tag, )
         faces = np.reshape(face_nodes, (len(face_nodes) // 3, 3))
 
-        # extract wall information
-        mesh = trimesh.Trimesh(coords, faces-1)
-
-        # flip normals to the center
-        wall_normal = np.median(mesh.face_normals, axis=0)
-        normal_dimension_mask = np.abs(wall_normal)>1e-3
-        surface_center = mesh.centroid
-        pointing_inwards = np.sign((room_center-surface_center)[normal_dimension_mask]) == np.sign(wall_normal[normal_dimension_mask])
-        if not np.all(pointing_inwards):
-            wall_normal *= -1
-        elif not np.any(pointing_inwards):
-            raise ValueError('Flipping normals inwards did not work.')
-
-        # calculate wall up vector
-        if np.abs(wall_normal[2]) > 1e-2:
-            wall_up_vector = [1, 0, 0] 
-        else:
-            wall_up_vector = [0, 0, 1] 
-        
         # Each triangle is passed as its own wall: sparrowpy needs the same
         # number of points for every wall, and room surfaces are arbitrary
         # planar polygons.
         n_patches_wall = faces.shape[0]
-        walls_normal.extend([wall_normal] * n_patches_wall)
-        walls_up_vector.extend([wall_up_vector] * n_patches_wall)
         surface_to_walls.append(list(range(n_patches, n_patches + n_patches_wall)))
 
         # write patches
@@ -509,14 +496,15 @@ def _import_room_geometry(json_file_path, patch_length):
 
     # compute room volume from the closed surface mesh
     all_faces = np.concatenate(all_faces, axis=0)
-    room_mesh = trimesh.Trimesh(coords, all_faces - 1)
+    room_mesh = trimesh.Trimesh(coords, all_faces - 1, process=False)
+    room_mesh.merge_vertices()  # keeps the order of the faces
     room_volume = abs(room_mesh.volume)
 
     # save wall information, one wall per patch
     patches_points = np.concatenate(patches_points)
     walls_points = patches_points
-    walls_normal = np.array(walls_normal)
-    walls_up_vector = np.array(walls_up_vector)
+    walls_normal = _inward_normals(room_mesh, surface_to_walls)
+    walls_up_vector = _up_vectors(walls_normal)
     patch_to_wall_ids = list(range(n_patches))
     material_to_walls = [
         [wall for surface in surfaces for wall in surface_to_walls[surface]]
@@ -526,6 +514,56 @@ def _import_room_geometry(json_file_path, patch_length):
         walls_points, walls_normal, walls_up_vector,
         patches_points, n_patches, patch_to_wall_ids,
         material_to_walls, alphas, scatterings, room_volume)
+
+
+def _inward_normals(
+        room_mesh: trimesh.Trimesh,
+        surface_to_walls: list[list[int]]) -> np.ndarray:
+    """Return the unit normal of each face pointing into the room.
+
+    All faces of a surface get the same normal, the area weighted mean of
+    their face normals. If the room is closed, the faces are oriented
+    consistently and outwards with trimesh, which also works for non
+    convex rooms. Otherwise each surface's normal is flipped towards the
+    center of the room, which only works for convex rooms.
+    """
+    mesh = room_mesh.copy()
+    watertight = mesh.is_watertight
+    if watertight:
+        trimesh.repair.fix_normals(mesh)
+    else:
+        warnings.warn(
+            "The room is not closed. Wall normals are oriented towards the "
+            "center of the room, which may fail for non convex rooms.",
+            stacklevel=3)
+    face_normals = mesh.face_normals
+    weighted = face_normals * mesh.area_faces[:, np.newaxis]
+    room_center = mesh.vertices.mean(axis=0)
+
+    normals = np.empty_like(face_normals)
+    for walls in surface_to_walls:
+        normal = weighted[walls].sum(axis=0)
+        normal /= np.linalg.norm(normal)
+        if watertight:
+            normal *= -1  # fix_normals makes them point outwards
+        else:
+            surface_center = mesh.triangles_center[walls].mean(axis=0)
+            if np.dot(room_center - surface_center, normal) < 0:
+                normal *= -1
+        normals[walls] = normal
+    return normals
+
+
+def _up_vectors(normals: np.ndarray) -> np.ndarray:
+    """Return a unit up vector perpendicular to each normal.
+
+    The z-axis projected onto the wall, or the x-axis for walls that are
+    (almost) horizontal.
+    """
+    axis = np.where(
+        np.abs(normals[:, 2:3]) < 0.9, [[0., 0., 1.]], [[1., 0., 0.]])
+    up = axis - np.einsum("ij,ij->i", axis, normals)[:, np.newaxis] * normals
+    return up / np.linalg.norm(up, axis=1, keepdims=True)
 
 
 # copy pasted from pyrato
