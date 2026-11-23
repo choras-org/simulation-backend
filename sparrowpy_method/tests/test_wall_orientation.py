@@ -31,7 +31,6 @@ def room_input_file(request, tmp_path):
     shutil.copy(os.path.join(default_data_path(), geo_name), tmp_path)
     input_data['geo_path'] = str(tmp_path / geo_name)
     input_data['msh_path'] = str(tmp_path / (geo_name[:-4] + ".msh"))
-    input_data.pop('error', None)
     json_path = Path(tmp_path) / "input.json"
     with open(json_path, 'w') as f:
         json.dump(input_data, f)

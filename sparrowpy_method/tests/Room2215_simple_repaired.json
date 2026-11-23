@@ -65,9 +65,5 @@
         "sound_power_W": 1,
         "sampling_rate": 44100
     },
-    "settingsPreset": "Default",
-    "error": {
-        "type": "KeyError",
-        "message": "'sim_len_type'"
-    }
+    "settingsPreset": "Default"
 }
