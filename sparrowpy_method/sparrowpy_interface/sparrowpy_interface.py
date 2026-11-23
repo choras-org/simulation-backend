@@ -5,6 +5,7 @@ from pathlib import Path
 
 from .definition import SimulationMethod
 from . import _numba_fix  # noqa: F401  must run before sparrowpy compiles
+from . import _threads  # noqa: F401  limit numba threads to the CPU limit
 import sparrowpy
 import gmsh
 import pyfar as pf
