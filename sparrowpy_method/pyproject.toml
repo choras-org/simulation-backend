@@ -30,6 +30,7 @@ dependencies = [
     "requests",
     "gmsh",
     "trimesh",
+    "embreex",  # fast ray casting backend for trimesh (visibility)
     "pyfar",
     "pyrato",
 ]

@@ -6,6 +6,7 @@ from pathlib import Path
 from .definition import SimulationMethod
 from . import _numba_fix  # noqa: F401  must run before sparrowpy compiles
 from . import _threads  # noqa: F401  limit numba threads to the CPU limit
+from .visibility import patch_visibility, point_visibility
 import sparrowpy
 import gmsh
 import pyfar as pf
@@ -85,7 +86,14 @@ class sparrowpyMethod(SimulationMethod):
             patches_points, n_patches, patch_to_wall_ids,
             material_to_walls, alphas, scattering, room_volume,
             ) = _import_room_geometry(json_file_path, patch_length)
-    
+
+        # ray casting is much faster than sparrowpy's own visibility checks
+        patches_normal = walls_normal[patch_to_wall_ids]
+        visibility_matrix = patch_visibility(patches_points, patches_normal)
+        source_visibility, *receiver_visibility = point_visibility(
+            np.vstack([source_coords.cartesian, receiver_coords.cartesian]),
+            patches_points, patches_normal)
+
         radiosity = sparrowpy.DirectionalRadiosityFast(
             walls_points,
             walls_normal,
@@ -93,6 +101,7 @@ class sparrowpyMethod(SimulationMethod):
             patches_points,
             n_patches,
             patch_to_wall_ids,
+            visibility_matrix=visibility_matrix,
             )
         
         print('set materials...')
@@ -115,7 +124,8 @@ class sparrowpyMethod(SimulationMethod):
 
         print('initialize source...')
         set_progress_and_save(40, result_container, json_file_path)
-        radiosity.init_source_energy(source_coords)
+        radiosity.init_source_energy(
+            source_coords, source_visibility=source_visibility)
 
         print('compute energy exchange...')
         set_progress_and_save(65, result_container, json_file_path)
@@ -128,7 +138,8 @@ class sparrowpyMethod(SimulationMethod):
         print('collect energy at receiver...')
         set_progress_and_save(90, result_container, json_file_path)
         etc_radiosity = radiosity.collect_energy_receiver_mono(
-            receivers=receiver_coords, direct_sound=True)
+            receivers=receiver_coords, direct_sound=True,
+            receiver_visibility=np.array(receiver_visibility))
 
         # apply sound power
         etc_radiosity = etc_radiosity * sound_power_W
