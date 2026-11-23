@@ -5,7 +5,6 @@ import warnings
 from pathlib import Path
 
 from .definition import SimulationMethod
-from . import _numba_fix  # noqa: F401  must run before sparrowpy compiles
 from . import _threads  # noqa: F401  limit numba threads to the CPU limit
 from .visibility import patch_visibility, point_visibility
 import sparrowpy
