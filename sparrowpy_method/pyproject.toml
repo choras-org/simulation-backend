@@ -25,7 +25,8 @@ classifiers = [
 ]
 dependencies = [
     "numpy>=1.23.0",
-    "sparrowpy[fast]>=1.1",
+    "sparrowpy>=1.1.1",
+    "numba",
     "requests",
     "gmsh",
     "trimesh",

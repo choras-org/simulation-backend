@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 
 from .definition import SimulationMethod
+from . import _numba_fix  # noqa: F401  must run before sparrowpy compiles
 import sparrowpy
 import gmsh
 import pyfar as pf
