@@ -24,6 +24,7 @@ Bug Fixes
 
 - Fix wall outlines for non-rectangular surfaces (#50)
 - Orient wall normals into the room for non-convex rooms, and keep up vectors perpendicular to tilted walls (#52)
+- Normalize the energy decay curve before computing EDT, T20 and T30 (#53)
 
 0.1.0 (2026-09-01)
 ------------------
