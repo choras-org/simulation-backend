@@ -25,7 +25,8 @@ classifiers = [
 ]
 dependencies = [
     "numpy>=1.23.0",
-    "sparrowpy>=1.1.1",
+    # TODO: temporarily install sparrowpy main until the next release
+    "sparrowpy @ git+https://github.com/sparrow-acoustics/sparrowpy.git@main",
     "numba",
     "requests",
     "gmsh",
