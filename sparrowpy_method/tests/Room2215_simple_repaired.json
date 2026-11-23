@@ -59,8 +59,8 @@
     "simulationSettings": {
         "speed_of_sound": 343,
         "etc_time_resolution_s": 0.005,
-        "etc_duration_s": 1.3,
-        "max_reflection_order": 30,
+        "etc_duration_s": 2,
+        "max_reflection_order": 80,
         "patch_length": 3,
         "sound_power_W": 1,
         "sampling_rate": 44100

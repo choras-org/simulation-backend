@@ -80,6 +80,8 @@ def test_results_are_finite(simulated_room):
         assert np.any(rir != 0)
         for name in ('t20', 't30', 'c80', 'd50', 'ts', 'spl_t0_freq'):
             assert np.all(np.isfinite(response['parameters'][name])), name
+        # -1 means the regression failed, e.g. on an unnormalized EDC
+        assert np.all(np.asarray(response['parameters']['edt']) > 0)
 
 
 def test_reverberation_time_matches_eyring(simulated_room):

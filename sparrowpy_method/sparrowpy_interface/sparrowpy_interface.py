@@ -155,6 +155,8 @@ class sparrowpyMethod(SimulationMethod):
         n_samples = int(sampling_rate * etc_duration_s)
         for i_rec in range(n_receivers):
             edc = etc_to_edc(etc_radiosity[i_rec, :], f_lower, f_upper)
+            # pyrato's regression expects the EDC to start at 0 dB (pyfar/pyrato#129)
+            edc_normalized = pf.dsp.normalize(edc, nan_policy='omit')
 
             rir = etc_to_ir(
                 etc_radiosity[i_rec, None],
@@ -168,11 +170,11 @@ class sparrowpyMethod(SimulationMethod):
 
             result_container["results"][0]["responses"][i_rec]["receiverResults"] = rir.time.squeeze().tolist()
             
-            t20 = pyrato.parameters.reverberation_time_linear_regression(edc, 'T20')
+            t20 = pyrato.parameters.reverberation_time_linear_regression(edc_normalized, 'T20')
             t20[t20==-np.inf] = 0
             result_container["results"][0]["responses"][i_rec]["parameters"]['t20'] = t20.tolist()
 
-            t30 = pyrato.parameters.reverberation_time_linear_regression(edc, 'T30')
+            t30 = pyrato.parameters.reverberation_time_linear_regression(edc_normalized, 'T30')
             t30[t30==-np.inf] = 0
             result_container["results"][0]["responses"][i_rec]["parameters"]['t30'] = t30.tolist()
 
@@ -188,7 +190,7 @@ class sparrowpyMethod(SimulationMethod):
             spl = 10*np.log10(edc.time[..., 0]/1e-12)
             result_container["results"][0]["responses"][i_rec]["parameters"]['spl_t0_freq'] = spl.tolist()
 
-            edt = pyrato.parameters.reverberation_time_linear_regression(edc, 'EDT')
+            edt = pyrato.parameters.reverberation_time_linear_regression(edc_normalized, 'EDT')
             edt[edt==-np.inf] = -1
             result_container["results"][0]["responses"][i_rec]["parameters"]['edt'] = edt.tolist()
 
