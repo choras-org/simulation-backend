@@ -137,10 +137,10 @@ class DEMethod(SimulationMethod):
         ## Write the results to the correct locations in the result container
         result_container["results"][0]["responses"][0]["parameters"][
             "edt"
-        ] = results["t20_band"].tolist()
+        ] = results["edt_band"].tolist()
         result_container["results"][0]["responses"][0]["parameters"][
             "t20"
-        ] = results["t30_band"].tolist()
+        ] = results["t20_band"].tolist()
         result_container["results"][0]["responses"][0]["parameters"][
             "t30"
         ] = results["t30_band"].tolist()
