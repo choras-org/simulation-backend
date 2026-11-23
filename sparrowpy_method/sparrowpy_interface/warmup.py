@@ -5,9 +5,9 @@ simulations skip the ~30 s JIT compilation:
 
     python -m sparrowpy_interface.warmup tests/test_input_sparrowpy.json
 
-The input JSON's ``geo_path`` and ``msh_path`` are resolved relative to
-the JSON file. Everything runs on a temporary copy, so the input files are
-not modified and no results are uploaded.
+The input JSON's ``geo_path`` is resolved relative to the JSON file.
+Everything runs on a temporary copy, so the input files are not modified
+and no results are uploaded.
 """
 import json
 import shutil
@@ -26,10 +26,11 @@ def warmup(input_json_path: str | Path) -> None:
 
     with tempfile.TemporaryDirectory() as tmp:
         tmp = Path(tmp)
-        for key in ("geo_path", "msh_path"):
-            src = input_json_path.parent / data[key]
-            shutil.copy(src, tmp)
-            data[key] = str(tmp / src.name)
+        # sparrowpy meshes the geo file itself, msh_path is not read
+        geo = input_json_path.parent / data["geo_path"]
+        shutil.copy(geo, tmp)
+        data["geo_path"] = str(tmp / geo.name)
+        data["msh_path"] = str(tmp / (geo.stem + ".msh"))
         tmp_json = tmp / "input.json"
         with open(tmp_json, "w") as f:
             json.dump(data, f)
