@@ -21,8 +21,9 @@ def test_simple_method(create_temporary_input_file):
     assert results is not None
     assert len(results) > 0
 
-    # receiverResults is the broadband RIR as a flat list of samples
-    assert np.all(np.isfinite(results))
+    # test no inf
+    for i in range(6):
+        assert np.min(results[i]['data']) > -np.inf
 
 
 

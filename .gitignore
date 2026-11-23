@@ -124,5 +124,3 @@ pyfar/signals/files/*
 # workaround for failing test discovery in vscode
 tests/*/__init__.py
 tests/private/
-sparrowpy_method/uv.lock
-sparrowpy_method/tests/*.msh
