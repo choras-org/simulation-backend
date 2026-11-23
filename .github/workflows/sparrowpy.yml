@@ -1,0 +1,50 @@
+name: sparrowpy Method CI
+
+on:
+  push:
+    branches:
+      - "**"
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  uv-test:
+    name: Pytest for the sparrowpy runner
+    runs-on: ubuntu-latest
+    continue-on-error: true
+
+    strategy:
+      matrix:
+        python-version:
+          - "3.13"
+          - "3.14"
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gmsh libglu1-mesa libgl1 mesa-utils
+
+      - name: Run test for the sparrowpy method
+        run: |
+          cd sparrowpy_method
+          uv run --extra tests pytest tests/
+
+  build-docker-image:
+    name: Build Docker Image
+    runs-on: ubuntu-latest
+    continue-on-error: true
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Build Docker Image
+        run: |
+          docker build -f sparrowpy_method/Dockerfile . --platform=linux/amd64 -t sparrowpy-method-test:latest

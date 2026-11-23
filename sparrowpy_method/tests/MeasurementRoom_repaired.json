@@ -1,0 +1,62 @@
+{
+    "absorption_coefficients": {
+        "7752659d-cf3a-6047-9a2f-67c0f4db3e30": "0.1, 0.1, 0.1, 0.1, 0.1",
+        "26cb16f4-44c0-1747-9b7d-954a456f6250": "0.1, 0.1, 0.1, 0.1, 0.1",
+        "2991a8c6-410e-a449-9f2d-b63ea5411f7e": "0.1, 0.1, 0.1, 0.1, 0.1",
+        "c21e38b3-a754-ea46-882b-df1505ce8660": "0.1, 0.1, 0.1, 0.1, 0.1",
+        "7f20cb52-2aef-614d-ab64-170044ad38dd": "0.1, 0.1, 0.1, 0.1, 0.1",
+        "f4b11518-7ebf-824b-81bb-4d129c8c9a5e": "0.1, 0.1, 0.1, 0.1, 0.1"
+    },
+    "msh_path": "MeasurementRoom_repaired.msh",
+    "geo_path": "MeasurementRoom_repaired.geo",
+    "results": [
+        {
+            "label": "Source 1",
+            "orderNumber": 1,
+            "percentage": 0,
+            "sourcePointId": "45892104-436f-49a5-aada-1d19155af3a2",
+            "sourceX": 1,
+            "sourceY": 1,
+            "sourceZ": 1,
+            "resultType": "DE",
+            "frequencies": [
+                125,
+                250,
+                500,
+                1000,
+                2000
+            ],
+            "responses": [
+                {
+                    "label": "Receiver 1",
+                    "orderNumber": 1,
+                    "x": 3,
+                    "y": 3,
+                    "z": 1,
+                    "pointId": "0c29dc3b-8f92-468b-aa0e-e71f968bd1c3",
+                    "parameters": {
+                        "edt": [],
+                        "t20": [],
+                        "t30": [],
+                        "c80": [],
+                        "d50": [],
+                        "ts": [],
+                        "spl_t0_freq": []
+                    },
+                    "receiverResults": []
+                }
+            ]
+        }
+    ],
+    "task_id": "ee4cbd86-7b85-4331-b69d-4a4984e2c062",
+    "simulationSettings": {
+        "speed_of_sound": 343,
+        "etc_time_resolution_s": 0.005,
+        "etc_duration_s": 1.5,
+        "max_reflection_order": 100,
+        "patch_length": 3,
+        "sound_power_W": 1,
+        "sampling_rate": 44100
+    },
+    "settingsPreset": "Default"
+}
