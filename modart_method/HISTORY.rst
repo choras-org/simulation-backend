@@ -5,6 +5,11 @@ History
 Unreleased
 ----------
 
+Features
+~~~~~~~~
+
+- Declare which geometry issues the method tolerates, for the backend's geometry compatibility check (#56)
+
 Bug Fixes
 ~~~~~~~~~
 

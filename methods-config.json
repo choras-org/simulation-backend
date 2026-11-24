@@ -63,6 +63,7 @@
         "label": "MoD-ART",
         "entryFile":"modart_interface.py",
         "settings":"modart_setting.json",
+        "geometryCompatibility":"modart_method/geometry_compatibility.json",
         "repositoryURL":"https://github.com/IoSR-Surrey/MoD-ART/",
         "documentationURL":"https://github.com/IoSR-Surrey/MoD-ART/blob/master/example%20usage/Tutorial.ipynb"
     }
