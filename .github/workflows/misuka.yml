@@ -11,6 +11,14 @@ on:
   push:
     branches:
       - "**"
+    tags:
+      - "misuka-v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing release tag to publish as an image, e.g. misuka-v0.2.0
+        required: true
+        type: string
 
 jobs:
   build-docker-image:
@@ -46,3 +54,13 @@ jobs:
           name: docker-build-log-${{ strategy.job-index }}
           path: build.log
 
+  publish:
+    name: Publish Docker image
+    if: startsWith(github.ref, 'refs/tags/misuka-v') || startsWith(inputs.tag, 'misuka-v')
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/publish-method-image.yml
+    with:
+      method: misuka
+      tag: ${{ inputs.tag || github.ref_name }}

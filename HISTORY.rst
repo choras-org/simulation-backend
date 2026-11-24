@@ -5,6 +5,8 @@ History
 Unreleased
 ----------
 
+- Publish method images to GHCR on release tags (#57)
+
 0.2.0 (2026-11-24)
 ------------------
 

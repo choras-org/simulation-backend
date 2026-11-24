@@ -1,0 +1,98 @@
+name: Publish Method Image
+
+# Called by each method's workflow on that method's release tag (e.g. de-v0.2.0),
+# or by hand with the tag as input to publish an existing release.
+# Builds <method>_method/Dockerfile at that tag and pushes ghcr.io/<owner>/choras-<method>
+# with the exact (0.2.0) and minor (0.2) version as image tags.
+
+on:
+  workflow_call:
+    inputs:
+      method:
+        description: Method name, as in the tag prefix and the <method>_method folder
+        required: true
+        type: string
+      tag:
+        description: Release tag to build, e.g. de-v0.2.0
+        required: true
+        type: string
+
+jobs:
+  publish:
+    name: Publish ${{ inputs.method }} image
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: refs/tags/${{ inputs.tag }}
+
+      - name: Check that the tag matches the method version
+        id: check
+        env:
+          METHOD: ${{ inputs.method }}
+          TAG: ${{ inputs.tag }}
+        run: |
+          tag_version="${TAG#"${METHOD}-v"}"
+          project_version=$(python3 -c "import tomllib; print(tomllib.load(open('${METHOD}_method/pyproject.toml', 'rb'))['project']['version'])")
+          if [ "$tag_version" != "$project_version" ]; then
+            echo "Tag $TAG doesn't match ${METHOD}_method version $project_version"
+            exit 1
+          fi
+          echo "revision=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          echo "version=$project_version" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Tags and the revision label come from the input tag, not from the ref the
+      # workflow runs on, which is a branch when an older tag is published by hand.
+      - name: Image name and tags
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/choras-${{ inputs.method }}
+          flavor: latest=false
+          tags: |
+            type=match,pattern=${{ inputs.method }}-v(\d+\.\d+\.\d+)$,group=1,value=${{ inputs.tag }}
+            type=match,pattern=${{ inputs.method }}-v(\d+\.\d+)\.\d+$,group=1,value=${{ inputs.tag }}
+          labels: |
+            org.opencontainers.image.revision=${{ steps.check.outputs.revision }}
+
+      # Published versions are never overwritten. GHCR answers a missing tag with
+      # "not found" and a package that doesn't exist yet with 403. A 403 can't hide
+      # an existing image: without read access the push fails too. Any other
+      # registry error stops the job.
+      - name: Stop if this version is already published
+        env:
+          OWNER: ${{ github.repository_owner }}
+          METHOD: ${{ inputs.method }}
+          VERSION: ${{ steps.check.outputs.version }}
+        run: |
+          image="ghcr.io/${OWNER,,}/choras-${METHOD}:${VERSION}"
+          if output=$(docker buildx imagetools inspect "$image" 2>&1); then
+            echo "$image already exists, not overwriting it"
+            exit 1
+          fi
+          if ! echo "$output" | grep -qiE "not found|name unknown|manifest unknown|403 Forbidden|denied"; then
+            echo "Couldn't check whether $image exists:"
+            echo "$output"
+            exit 1
+          fi
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ${{ inputs.method }}_method/Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
