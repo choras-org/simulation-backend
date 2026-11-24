@@ -5,11 +5,15 @@ History
 Unreleased
 ----------
 
+0.2.0 (2026-11-24)
+------------------
+
 Added
 ~~~~~
 
 - Tests with repaired room geometries exported by the CHORAS frontend (#52)
 - GitHub Actions workflow running the tests and building the Docker image (#52)
+- Declare which geometry issues the method tolerates, for the backend's geometry compatibility check (#32)
 
 Changed
 ~~~~~~~
