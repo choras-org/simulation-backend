@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "simulation_backend"
-version = "0.1.0"
+version = "0.2.0"
 requires-python = ">=3.10"
 description = "Simulation backend umbrella. This is only for version managing of the umbrella. Not a real package or method."
 
@@ -44,7 +44,7 @@ dev = ["simulation_backend[tests,docs]"]
 packages = []
 
 [tool.bumpversion]
-current_version = "0.1.0"
+current_version = "0.2.0"
 commit = true
 tag = true
 message = "Bump simulation backend umbrella version: {current_version} → {new_version}"
