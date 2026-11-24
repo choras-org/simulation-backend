@@ -452,7 +452,9 @@ def _import_room_geometry(json_file_path, patch_length):
     scatterings = []
     material_to_walls = []
     for material_name in absorption_names:
-        alphas.append(np.array(input_data['absorption_coefficients'][material_name]))
+        alphas.append(np.array(
+            input_data['absorption_coefficients'][material_name].split(','),
+            dtype=float))
         scatterings.append(np.ones_like(frequencies))
 
         # materials
@@ -465,8 +467,7 @@ def _import_room_geometry(json_file_path, patch_length):
 
     # get the element type for surface mesh
     element_type = gmsh.model.mesh.getElementType("Triangle", 1, True)
-    
-    alphas = []
+
     patches_points = []
     all_faces = []
     n_patches = 0
@@ -489,9 +490,6 @@ def _import_room_geometry(json_file_path, patch_length):
         n_patches += n_patches_wall
         patches_points.append(coords[faces-1, :])
         all_faces.append(faces)
-
-        alpha = np.array(input_data['absorption_coefficients'][surface_name].split(', '), dtype=float)
-        alphas.append(alpha)
 
     # finalizing gmsh
     gmsh.finalize()
