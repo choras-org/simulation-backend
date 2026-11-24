@@ -65,6 +65,30 @@ def _eyring(json_path, data):
     return t_eyring, alpha_mean
 
 
+def test_absorption_matches_surface(tmp_path):
+    """The absorption of a surface is paired with the walls of that surface,
+    although the JSON lists the surfaces in another order than the .geo."""
+    room = "MeasurementRoom_repaired"
+    data_path = Path(default_data_path())
+    with open(data_path / f"{room}.json") as f:
+        input_data = json.load(f)
+    shutil.copy(data_path / f"{room}.geo", tmp_path)
+    input_data['geo_path'] = str(tmp_path / f"{room}.geo")
+    # first in the JSON, second in the .geo
+    input_data['absorption_coefficients'][
+        '7752659d-cf3a-6047-9a2f-67c0f4db3e30'] = '0.2, 0.2, 0.2, 0.2, 0.2'
+    json_path = tmp_path / "input.json"
+    with open(json_path, 'w') as f:
+        json.dump(input_data, f)
+
+    (*_, material_to_walls, alphas, _, _) = _import_room_geometry(
+        json_path, input_data['simulationSettings']['patch_length'])
+
+    np.testing.assert_allclose(alphas[0], 0.2)
+    np.testing.assert_allclose(alphas[1], 0.1)
+    assert len(material_to_walls) == len(alphas)
+
+
 def _responses(data):
     return data['results'][0]['responses']
 
