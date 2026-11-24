@@ -1,0 +1,16 @@
+{
+    "extends": "choras-baseline",
+    "method": "MoDART",
+    "notes": "MoD-ART builds an acoustic radiance transfer model from surface patches. Each patch must be planar with non-degenerate triangles, otherwise the model cannot be built.",
+    "issues": {
+        "non_planar_face": {
+            "compatibility": "incompatible"
+        },
+        "zero_area_face": {
+            "compatibility": "incompatible"
+        },
+        "collinear_face": {
+            "compatibility": "incompatible"
+        }
+    }
+}
