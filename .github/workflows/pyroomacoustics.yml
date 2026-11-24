@@ -4,6 +4,14 @@ on:
   push:
     branches:
       - '**'
+    tags:
+      - "pyroomacoustics-v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing release tag to publish as an image, e.g. pyroomacoustics-v0.2.0
+        required: true
+        type: string
 
 jobs:
   uv-test:
@@ -48,3 +56,14 @@ jobs:
       - name: Build Docker Image
         run: |
           docker build -f pyroomacoustics_method/Dockerfile . --platform=linux/amd64 -t pyroomacoustics-method-test:latest
+
+  publish:
+    name: Publish Docker image
+    if: startsWith(github.ref, 'refs/tags/pyroomacoustics-v') || startsWith(inputs.tag, 'pyroomacoustics-v')
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/publish-method-image.yml
+    with:
+      method: pyroomacoustics
+      tag: ${{ inputs.tag || github.ref_name }}
