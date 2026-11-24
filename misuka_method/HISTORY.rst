@@ -5,16 +5,21 @@ History
 Unreleased
 ----------
 
+0.2.0 (2026-11-24)
+------------------
+
 Added
 ^^^^^
 
 - Atmospheric rendering: speed of sound from the propagation medium or a user value, and optional air attenuation (PR #34)
 - Maximum energy loss setting, 100 dB by default (PR #34)
+- Declare which geometry issues the method tolerates, for the backend's geometry compatibility check (PR #32)
 
 Changed
 ^^^^^^^
 
 - Build misuka from the tag ``choras-v1.0.1`` instead of the ``lgpl`` branch (PR #34)
+- Use pyrato's RIR synthesis instead of the bundled ``parametric.py`` (PR #34)
 
 Fixed
 ^^^^^
